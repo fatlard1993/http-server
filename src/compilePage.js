@@ -7,6 +7,8 @@ const postcssAutoprefixer = require('autoprefixer');
 const postcssNested = require('postcss-nested');
 const postCssExtend = require('postcss-extend-rule');
 const postCssVariables = require('postcss-simple-vars');
+const findRoot = require('find-root');
+const now = require('performance-now');
 const fsExtended = require('fs-extended');
 const log = require('log');
 
@@ -19,20 +21,26 @@ const babelOptions = {
 	presets: ['@babel/env', 'minify']
 };
 
+const rootFolder = findRoot(process.cwd());
+
 const compilePage = module.exports = {
 	includesText: '// includes ',
 	babelText: '// babel',
 	openText: '\n</head><body>',
 	closeText: '\n</body></html>',
+	includesTag: {
+		js: 'script>',
+		css: 'style>'
+	},
 	cache: {},
 	compile: function(name, dynamicContent){
-		var start = new Date().getTime();
+		var start = now();
 
 		var pageHtml = this.readCacheFile(name);
 
 		var fullHTML = this.readCacheFile('head').replace('XXX', name) + (this.cache[name].includesHTML ? this.cache[name].includesHTML : '') + this.openText + pageHtml + this.closeText;
 
-		log(`Time to compile "${name}": ${new Date().getTime() - start}ms`);
+		log(`Time to compile "${name}": ${now() - start}ms`);
 
 		return dynamicContent ? fullHTML.replace('YYY', dynamicContent) : fullHTML;
 	},
@@ -54,10 +62,16 @@ const compilePage = module.exports = {
 
 			var fileStats = /^(?:.*\/)?([^\.]*)\.?(.*)?$/.exec(file), fileExtension = fileStats[2] || 'html', fileName = fileStats[1], filePath, fileText, includes;
 
-			if(fileExtension === 'css'){
-				filePath = path.join(__dirname, '../client/css', file);
+			cssCache: if(fileExtension === 'css'){
+				filePath = path.join(rootFolder, 'client/css', file);
 
 				fileText = fsExtended.catSync(filePath);
+
+				if(!fileText){
+					log.error(filePath, 'does not exist');
+
+					break cssCache;
+				}
 
 				this.cache[file].includes = this.readIncludes(fileText, fileExtension);
 
@@ -65,9 +79,15 @@ const compilePage = module.exports = {
 			}
 
 			jsCache: if(fileExtension === 'js'){
-				filePath = path.join(__dirname, '../client/js', file);
+				filePath = path.join(rootFolder, 'client/js', file);
 
 				fileText = fsExtended.catSync(filePath);
+
+				if(!fileText){
+					log.error(filePath, 'does not exist');
+
+					break jsCache;
+				}
 
 				this.cache[file].includes = this.readIncludes(fileText, fileExtension);
 
@@ -87,9 +107,15 @@ const compilePage = module.exports = {
 			}
 
 			htmlCache: if(fileExtension === 'html'){
-				filePath = path.join(__dirname, '../client/html', fileName +'.html');
+				filePath = path.join(rootFolder, 'client/html', fileName +'.html');
 
 				fileText = fsExtended.catSync(filePath);
+
+				if(!fileText){
+					log.error(filePath, 'does not exist');
+
+					break htmlCache;
+				}
 
 				includes = this.readIncludes(fileText, fileExtension);
 
@@ -153,15 +179,17 @@ const compilePage = module.exports = {
 
 			fileText = this.readCacheFile(fileName);
 			fileExtension = this.cache[fileName].extension;
-			htmlTag = fileExtension === 'js' ? 'script>' : 'style>';
+			htmlTag = this.includesTag[fileExtension];
 
 			if(this.cache[fileName].includes){
 				for(y = this.cache[fileName].includes.length - 1; y >= 0; --y){
-					fileText = this.readCacheFile(this.cache[fileName].includes[y]) +'\n'+ fileText;
+					fileText = `${this.readCacheFile(this.cache[fileName].includes[y])}\n${fileText}`;
 				}
 			}
 
 			if(fileExtension === 'css'){
+				log(`rendering ${fileName}`);
+
 				try{
 					fileText = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNested(), postCssExtend(), postCssVariables()]).process(fileText);
 				}
@@ -173,7 +201,7 @@ const compilePage = module.exports = {
 				}
 			}
 
-			includesHTML += '\n\t\t<'+ htmlTag + fileText +'</'+ htmlTag;
+			includesHTML += `\n\t\t<${htmlTag}${fileText}</${htmlTag}`;
 		}
 
 		this.cache[name].includesHTML = includesHTML;
