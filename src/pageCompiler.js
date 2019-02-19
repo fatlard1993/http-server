@@ -28,6 +28,7 @@ const rootFolder = findRoot(process.cwd());
 // add file names to a list to check if its already there first
 
 //todo support checking node_modules at root and parent for named includes
+//todo support reading the package.json to find which file to include
 
 const compilePage = module.exports = {
 	includesText: '// includes ',
@@ -69,12 +70,10 @@ const compilePage = module.exports = {
 			var fileStats = /^(?:.*\/)?([^\.]*)\.?(.*)?$/.exec(file), fileExtension = fileStats[2] || 'html', fileName = fileStats[1], filePath, fileText, includes;
 
 			cssCache: if(fileExtension === 'css'){
-				filePath = path.join(rootFolder, 'client/css', file);
-
-				fileText = fsExtended.catSync(filePath);
+				fileText = fsExtended.catSync(file);
 
 				if(!fileText){
-					log.error(filePath, 'does not exist');
+					log.error(file, 'does not exist');
 
 					break cssCache;
 				}
@@ -85,12 +84,10 @@ const compilePage = module.exports = {
 			}
 
 			jsCache: if(fileExtension === 'js'){
-				filePath = path.join(rootFolder, 'client/js', file);
-
-				fileText = fsExtended.catSync(filePath);
+				fileText = fsExtended.catSync(file);
 
 				if(!fileText){
-					log.error(filePath, 'does not exist');
+					log.error(file, 'does not exist');
 
 					break jsCache;
 				}
@@ -100,13 +97,13 @@ const compilePage = module.exports = {
 				if(!/^(.*)\n?(.*)\n?/.exec(fileText)[this.cache[file].includes ? 2 : 1].startsWith(this.babelText)) break jsCache;
 
 				try{
-					log(1)('Running babel on JS: ', filePath);
+					log(1)('Running babel on JS: ', file);
 
 					fileText = babel.transformSync(fileText, babelOptions).code;
 				}
 
 				catch(err){
-					log.error('Error running babel on JS: ', filePath, err);
+					log.error('Error running babel on JS: ', file, err);
 
 					mtime = fileText = err;
 				}
@@ -131,7 +128,7 @@ const compilePage = module.exports = {
 
 				if($selfIndex >= 0){
 					includes.splice($selfIndex, 1);
-					includes.push(`${fileName}.js`, `${fileName}.css`);
+					includes.push(path.join(rootFolder, `client/js/${fileName}.js`), path.join(rootFolder, `client/css/${fileName}.css`));
 				}
 
 				this.cache[file].includes = includes;
