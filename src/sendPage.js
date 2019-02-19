@@ -1,9 +1,9 @@
-const compilePage = require('./compilePage');
+const pageCompiler = require('./pageCompiler');
 
 module.exports = function sendPage(name, status){
 	return function(req, res){
 		if(status) res.status(status);
 
-		res.end(compilePage(name));
+		res.end(pageCompiler.compile(name));
 	};
 };

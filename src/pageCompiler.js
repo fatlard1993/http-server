@@ -17,11 +17,17 @@ const autoprefixerOptions = {
 	browsers: ['last 10 versions'],
 	cascade: false
 };
+
 const babelOptions = {
-	presets: ['@babel/env', 'minify']
+	presets: ['@babel/env', ['minify', { builtIns: false }]]
 };
 
 const rootFolder = findRoot(process.cwd());
+
+//todo support includes with includes
+// add file names to a list to check if its already there first
+
+//todo support checking node_modules at root and parent for named includes
 
 const compilePage = module.exports = {
 	includesText: '// includes ',
@@ -164,10 +170,35 @@ const compilePage = module.exports = {
 			fileName = file[2];
 			fileExtension = file[3] || extension;
 
-			includes[x] = `${filePath}${fileName}.${fileExtension}`;
+			if(extension === 'html') includes[x] = `${filePath}${fileName}.${fileExtension}`;
+
+			else includes[x] = this.findFile(fileName, fileExtension);
 		}
 
 		return includes;
+	},
+	findFile: function(name, extension){
+		var filePath, checks = [`client/${extension}/_${name}.${extension}`, `node_modules/${name}/src/index.${extension}`, `../node_modules/${name}/src/index.${extension}`];
+
+		for(var x = 0, count = checks.length; x < count; ++x){
+			filePath = path.join(rootFolder, checks[x]);
+
+			if(fs.existsSync(filePath)){
+				log.info(filePath, 'exists');
+
+				break;
+			}
+
+			else{
+				log.warn(filePath, 'does not exist');
+
+				filePath = null;
+			}
+		}
+
+		if(!filePath) log.error(name, extension, 'does not exist');
+
+		return filePath;
 	},
 	generateIncludesHTML: function(name){
 		var includesHTML = '', fileName, fileExtension, fileText, htmlTag;

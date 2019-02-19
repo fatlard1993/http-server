@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 
 const sendPage = require('./sendPage');
-const compilePage = require('./compilePage');
+const pageCompiler = require('./pageCompiler');
 const onError = require('./middleware/error');
 const responsePrepper = require('./middleware/responsePrepper');
 const redirectTrailingWak = require('./middleware/redirectTrailingWak');
@@ -16,5 +16,5 @@ module.exports = function httpServer(port, homePath = '/home'){
 
 	app.listen(port);
 
-	return { app, compilePage, staticServer, sendPage	};
+	return { app, pageCompiler, staticServer, sendPage	};
 };

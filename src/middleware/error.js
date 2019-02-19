@@ -1,6 +1,6 @@
 const log = require('log');
 
-const compilePage = require('../compilePage');
+const pageCompiler = require('../pageCompiler');
 
 const error = module.exports = function(err, req, res, next){
 	if(!err || !err.code){
@@ -36,5 +36,5 @@ const error = module.exports = function(err, req, res, next){
 		return res.redirect(307, err.redirectPath);
 	}
 
-	res.status(err.code).end(compilePage.compile('error', detail));
+	res.status(err.code).end(pageCompiler.compile('error', detail));
 };
