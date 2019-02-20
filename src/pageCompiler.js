@@ -30,11 +30,13 @@ const rootFolder = findRoot(process.cwd());
 //todo support checking node_modules at root and parent for named includes
 //todo support reading the package.json to find which file to include
 
-const compilePage = module.exports = {
+const pageCompiler = module.exports = {
 	includesText: '// includes ',
 	babelText: '// babel',
-	openText: '\n</head><body>',
-	closeText: '\n</body></html>',
+	startText: '<!DOCTYPE html><html><head>',
+	headText: '<title>XXX</title>',
+	openText: '</head><body>',
+	closeText: '</body></html>',
 	includesTag: {
 		js: 'script>',
 		css: 'style>'
@@ -45,7 +47,7 @@ const compilePage = module.exports = {
 
 		var pageHtml = this.readCacheFile(name);
 
-		var fullHTML = this.readCacheFile('head').replace('XXX', name) + (this.cache[name].includesHTML ? this.cache[name].includesHTML : '') + this.openText + pageHtml + this.closeText;
+		var fullHTML = this.startText + this.readCacheFile('head').replace('XXX', name) + (this.cache[name].includesHTML ? this.cache[name].includesHTML : '') + this.openText + pageHtml + this.closeText;
 
 		log(`Time to compile "${name}": ${now() - start}ms`);
 
@@ -57,7 +59,13 @@ const compilePage = module.exports = {
 		var toCache = !this.cache[file], mtime;
 
 		if(!toCache){
-			mtime = String(fs.statSync(this.cache[file].path).mtime);
+			try{
+				mtime = String(fs.statSync(this.cache[file].path).mtime);
+			}
+
+			catch(err){
+				mtime = err;
+			}
 
 			toCache = this.cache[file].mtime !== mtime;
 		}
@@ -75,6 +83,9 @@ const compilePage = module.exports = {
 				if(!fileText){
 					log.error(file, 'does not exist');
 
+					fileText = '';
+					mtime = 'none';
+
 					break cssCache;
 				}
 
@@ -88,6 +99,9 @@ const compilePage = module.exports = {
 
 				if(!fileText){
 					log.error(file, 'does not exist');
+
+					fileText = '';
+					mtime = 'none';
 
 					break jsCache;
 				}
@@ -117,6 +131,11 @@ const compilePage = module.exports = {
 				if(!fileText){
 					log.error(filePath, 'does not exist');
 
+					if(fileName === 'head'){
+						fileText = this.headText;
+						mtime = 'none';
+					}
+
 					break htmlCache;
 				}
 
@@ -140,7 +159,6 @@ const compilePage = module.exports = {
 
 			if(!filePath) filePath = file;
 			if(!mtime) mtime = String(fs.statSync(filePath).mtime);
-			if(!fileText) fileText = fsExtended.catSync(filePath);
 
 			this.cache[file].path = filePath;
 			this.cache[file].extension = fileExtension;
