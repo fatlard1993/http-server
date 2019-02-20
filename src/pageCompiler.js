@@ -5,8 +5,8 @@ const babel = require('@babel/core');
 const postcss = require('postcss');
 const postcssAutoprefixer = require('autoprefixer');
 const postcssNested = require('postcss-nested');
-const postCssExtend = require('postcss-extend-rule');
-const postCssVariables = require('postcss-simple-vars');
+const postcssExtend = require('postcss-extend-rule');
+const postcssVariables = require('postcss-simple-vars');
 const findRoot = require('find-root');
 const now = require('performance-now');
 const fsExtended = require('fs-extended');
@@ -27,7 +27,6 @@ const rootFolder = findRoot(process.cwd());
 //todo support includes with includes
 // add file names to a list to check if its already there first
 
-//todo support checking node_modules at root and parent for named includes
 //todo support reading the package.json to find which file to include
 
 const pageCompiler = module.exports = {
@@ -49,56 +48,63 @@ const pageCompiler = module.exports = {
 
 		var fullHTML = this.startText + this.readCacheFile('head').replace('XXX', name) + (this.cache[name].includesHTML ? this.cache[name].includesHTML : '') + this.openText + pageHtml + this.closeText;
 
-		log(`Time to compile "${name}": ${now() - start}ms`);
+		log(`Time to compile "${name}": ${((now() - start) / 1000).toFixed(2)}s`);
 
 		return dynamicContent ? fullHTML.replace('YYY', dynamicContent) : fullHTML;
 	},
-	readCacheFile: function(file){
-		if(!process.env.DEV && this.cache[file]) return this.cache[file].text;
+	getFileWithIncludes: function(filePath){
+		var text = '';
 
-		var toCache = !this.cache[file], mtime;
+		this.loadFileCache(filePath);
+
+		if(!this.cache[filePath].includes) return text;
+
+		for(var x = 0, count = this.cache[filePath].includes.length; x < count; ++x){
+			if(this.cache[filePath].dependencies[this.cache[filePath].includes[x]]) continue;
+
+			this.cache[filePath].dependencies[this.cache[filePath].includes[x]] = 1;
+
+			text = this.getFileWithIncludes(this.cache[filePath].includes[x]) + text;
+		}
+
+		return text;
+	},
+	loadFileCache: function(file_path){
+		if(!file_path) return '';
+
+		if(!process.env.DEV && this.cache[file_path]) return this.cache[file_path].cache;
+
+		var toCache = !this.cache[file_path], mtime;
 
 		if(!toCache){
 			try{
-				mtime = String(fs.statSync(this.cache[file].path).mtime);
+				mtime = String(fs.statSync(this.cache[file_path].path).mtime);
 			}
 
 			catch(err){
 				mtime = err;
 			}
 
-			toCache = this.cache[file].mtime !== mtime;
+			toCache = this.cache[file_path].mtime !== mtime;
 		}
 
 		if(toCache){
-			log(1)(`Caching ${file}`);
+			log(1)(`Caching ${file_path}`);
 
-			this.cache[file] = this.cache[file] || {};
+			this.cache[filePath] = this.cache[filePath] || {};
+			this.cache[filePath].dependencies = {};
 
-			var fileStats = /^(?:.*\/)?([^\.]*)\.?(.*)?$/.exec(file), fileExtension = fileStats[2] || 'html', fileName = fileStats[1], filePath, fileText, includes;
+			var fileStats = /^(?:.*\/)?([^\.]*)\.?(.*)?$/.exec(file_path), fileExtension = fileStats[2], fileName = fileStats[1], filePath, fileText, includes;
 
-			cssCache: if(fileExtension === 'css'){
-				fileText = fsExtended.catSync(file);
-
-				if(!fileText){
-					log.error(file, 'does not exist');
-
-					fileText = '';
-					mtime = 'none';
-
-					break cssCache;
-				}
-
-				this.cache[file].includes = this.readIncludes(fileText, fileExtension);
-
-				if(this.cache[file].includes) fileText = fileText.replace(/.*\n/, '');
+			if(fileExtension === 'css'){
+				fileText = fsExtended.catSync(file_path);
 			}
 
 			jsCache: if(fileExtension === 'js'){
-				fileText = fsExtended.catSync(file);
+				fileText = fsExtended.catSync(file_path);
 
 				if(!fileText){
-					log.error(file, 'does not exist');
+					log.error(file_path, 'does not exist');
 
 					fileText = '';
 					mtime = 'none';
@@ -106,18 +112,18 @@ const pageCompiler = module.exports = {
 					break jsCache;
 				}
 
-				this.cache[file].includes = this.readIncludes(fileText, fileExtension);
+				this.cache[file_path].includes = this.readIncludes(fileText, fileExtension);
 
-				if(!/^(.*)\n?(.*)\n?/.exec(fileText)[this.cache[file].includes ? 2 : 1].startsWith(this.babelText)) break jsCache;
+				if(!/^(.*)\n?(.*)\n?/.exec(fileText)[this.cache[file_path].includes ? 2 : 1].startsWith(this.babelText)) break jsCache;
 
 				try{
-					log(1)('Running babel on JS: ', file);
+					log(1)('Running babel on JS: ', file_path);
 
 					fileText = babel.transformSync(fileText, babelOptions).code;
 				}
 
 				catch(err){
-					log.error('Error running babel on JS: ', file, err);
+					log.error('Error running babel on JS: ', file_path, err);
 
 					mtime = fileText = err;
 				}
@@ -133,9 +139,11 @@ const pageCompiler = module.exports = {
 
 					if(fileName === 'head'){
 						fileText = this.headText;
-						mtime = 'none';
 					}
 
+					else fileText = '';
+
+					mtime = 'none';
 					break htmlCache;
 				}
 
@@ -150,27 +158,150 @@ const pageCompiler = module.exports = {
 					includes.push(path.join(rootFolder, `client/js/${fileName}.js`), path.join(rootFolder, `client/css/${fileName}.css`));
 				}
 
-				this.cache[file].includes = includes;
+				this.cache[file_path].includes = includes;
 
 				fileText = fileText.replace(/.*\n/, '');
 
-				this.generateIncludesHTML(file);
+				this.generateIncludesHTML(file_path);
 			}
 
-			if(!filePath) filePath = file;
+			if(!filePath) filePath = file_path;
 			if(!mtime) mtime = String(fs.statSync(filePath).mtime);
 
-			this.cache[file].path = filePath;
-			this.cache[file].extension = fileExtension;
-			this.cache[file].mtime = mtime;
-			this.cache[file].text = fileText;
+			this.cache[file_path].path = filePath;
+			this.cache[file_path].extension = fileExtension;
+			this.cache[file_path].mtime = mtime;
+			this.cache[file_path].text = fileText;
 
-			log(`Cached ${file}`);
+			log(1)(`Cached ${file_path}`);
 		}
 
-		else if(this.cache[file].extension === 'html' && this.cache[file].includes) this.generateIncludesHTML(file);
+		else if(this.cache[file_path].extension === 'html' && this.cache[file_path].includes) this.generateIncludesHTML(file_path);
 
-		return this.cache[file].text;
+		return this.cache[file_path].text;
+	},
+	readCacheFile: function(file_path){
+		if(!file_path) return '';
+
+		if(!process.env.DEV && this.cache[file_path]) return this.cache[file_path].text;
+
+		var toCache = !this.cache[file_path], mtime;
+
+		if(!toCache){
+			try{
+				mtime = String(fs.statSync(this.cache[file_path].path).mtime);
+			}
+
+			catch(err){
+				mtime = err;
+			}
+
+			toCache = this.cache[file_path].mtime !== mtime;
+		}
+
+		if(toCache){
+			log(1)(`Caching ${file_path}`);
+
+			this.cache[file_path] = this.cache[file_path] || {};
+
+			var fileStats = /^(?:.*\/)?([^\.]*)\.?(.*)?$/.exec(file_path), fileExtension = fileStats[2] || 'html', fileName = fileStats[1], filePath, fileText, includes;
+
+			cssCache: if(fileExtension === 'css'){
+				fileText = fsExtended.catSync(file_path);
+
+				if(!fileText){
+					log.error(file_path, 'does not exist');
+
+					fileText = '';
+					mtime = 'none';
+
+					break cssCache;
+				}
+
+				this.cache[file_path].includes = this.readIncludes(fileText, fileExtension);
+
+				if(this.cache[file_path].includes) fileText = fileText.replace(/.*\n/, '');
+			}
+
+			jsCache: if(fileExtension === 'js'){
+				fileText = fsExtended.catSync(file_path);
+
+				if(!fileText){
+					log.error(file_path, 'does not exist');
+
+					fileText = '';
+					mtime = 'none';
+
+					break jsCache;
+				}
+
+				this.cache[file_path].includes = this.readIncludes(fileText, fileExtension);
+
+				if(!/^(.*)\n?(.*)\n?/.exec(fileText)[this.cache[file_path].includes ? 2 : 1].startsWith(this.babelText)) break jsCache;
+
+				try{
+					log(1)('Running babel on JS: ', file_path);
+
+					fileText = babel.transformSync(fileText, babelOptions).code;
+				}
+
+				catch(err){
+					log.error('Error running babel on JS: ', file_path, err);
+
+					mtime = fileText = err;
+				}
+			}
+
+			htmlCache: if(fileExtension === 'html'){
+				filePath = path.join(rootFolder, 'client/html', fileName +'.html');
+
+				fileText = fsExtended.catSync(filePath);
+
+				if(!fileText){
+					log.error(filePath, 'does not exist');
+
+					if(fileName === 'head'){
+						fileText = this.headText;
+					}
+
+					else fileText = '';
+
+					mtime = 'none';
+					break htmlCache;
+				}
+
+				includes = this.readIncludes(fileText, fileExtension);
+
+				if(!includes) break htmlCache;
+
+				var $selfIndex = includes.indexOf('$self.html');
+
+				if($selfIndex >= 0){
+					includes.splice($selfIndex, 1);
+					includes.push(path.join(rootFolder, `client/js/${fileName}.js`), path.join(rootFolder, `client/css/${fileName}.css`));
+				}
+
+				this.cache[file_path].includes = includes;
+
+				fileText = fileText.replace(/.*\n/, '');
+
+				this.generateIncludesHTML(file_path);
+			}
+
+			if(!filePath) filePath = file_path;
+			if(!mtime) mtime = String(fs.statSync(filePath).mtime);
+
+			this.cache[file_path].path = filePath;
+			this.cache[file_path].extension = fileExtension;
+			this.cache[file_path].mtime = mtime;
+			this.cache[file_path].text = fileText;
+
+			log(1)(`Cached ${file_path}`);
+		}
+
+		else if(this.cache[file_path].extension === 'html' && this.cache[file_path].includes) this.generateIncludesHTML(file_path);
+
+		return this.cache[file_path].text;
 	},
 	readIncludes: function(text, extension){
 		var firstLine = /(.*)\n/.exec(text)[1];
@@ -192,20 +323,46 @@ const pageCompiler = module.exports = {
 
 		return includes;
 	},
+	getIncludes: function(text, extension){
+		var firstLine = /(.*)\n/.exec(text)[1];
+
+		if(!firstLine.startsWith(this.includesText)) return;
+
+		var includes = firstLine.substring(12).split(' ');
+
+		for(var x = 0, count = includes.length, file, filePath, fileName, fileExtension; x < count; ++x){
+			file = /^(.*\/)?([^\.]*)\.?(.*)?$/.exec(includes[x]);
+			filePath = file[1];
+			fileName = file[2];
+			fileExtension = file[3] || extension;
+
+			if(extension === 'html') includes[x] = `${filePath}${fileName}.${fileExtension}`;
+
+			else includes[x] = this.findFile(fileName, fileExtension);
+		}
+
+		return includes;
+	},
 	findFile: function(name, extension){
-		var filePath, checks = [`client/${extension}/_${name}.${extension}`, `node_modules/${name}/src/index.${extension}`, `../node_modules/${name}/src/index.${extension}`];
+		var filePath, checks = [`client/${extension}/${name}.${extension}`, `client/${extension}/_${name}.${extension}`, `node_modules/${name}/package.json`, `../node_modules/${name}/package.json`];
 
 		for(var x = 0, count = checks.length; x < count; ++x){
 			filePath = path.join(rootFolder, checks[x]);
 
 			if(fs.existsSync(filePath)){
-				log.info(filePath, 'exists');
+				log.info(1)(filePath, 'exists');
+
+				if(x > 1){
+					var pkg = JSON.parse(fs.readFileSync(filePath));
+
+					filePath = path.join(rootFolder, checks[x].replace('package.json', ''), pkg.main);
+				}
 
 				break;
 			}
 
 			else{
-				log.warn(filePath, 'does not exist');
+				log.warn(1)(filePath, 'does not exist');
 
 				filePath = null;
 			}
@@ -237,7 +394,7 @@ const pageCompiler = module.exports = {
 				log(`rendering ${fileName}`);
 
 				try{
-					fileText = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNested(), postCssExtend(), postCssVariables()]).process(fileText);
+					fileText = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNested(), postcssExtend(), postcssVariables()]).process(fileText);
 				}
 
 				catch(err){
