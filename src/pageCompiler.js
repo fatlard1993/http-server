@@ -19,12 +19,13 @@ const autoprefixerOptions = {
 };
 
 const babelOptions = {
-	presets: ['@babel/env', ['minify', { builtIns: false }]]
+	presets: ['@babel/env']//, ['minify', { builtIns: false }]
 };
 
 const rootFolder = findRoot(process.cwd());
 
 //todo look into caching rendered css
+//todo inline manifest file: <link rel="manifest" href='data:application/manifest+json,{}'/>
 
 const pageCompiler = module.exports = {
 	includesText: '// includes ',
@@ -39,14 +40,10 @@ const pageCompiler = module.exports = {
 	},
 	cache: {},
 	compile: function(name, dynamicContent){
-		var start = now();
-
 		var headHtml = this.getFileWithIncludes(this.findFile('head', 'html'));
 		var pageHtml = this.getFileWithIncludes(this.findFile(name, 'html'));
 
 		var fullHTML = this.startText + headHtml.replace('XXX', name) + pageHtml + this.closeText;
-
-		log(`Time to compile "${name}": ${((now() - start) / 1000).toFixed(2)}s`);
 
 		return dynamicContent ? fullHTML.replace('YYY', dynamicContent) : fullHTML;
 	},
