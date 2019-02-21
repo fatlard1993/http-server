@@ -1,9 +1,13 @@
+const zlib = require('zlib');
+
 const pageCompiler = require('./pageCompiler');
 
 module.exports = function sendPage(name, status){
 	return function(req, res){
-		if(status) res.status(status);
+    res.writeHead(status || 200, {'Content-Type': 'text/html', 'Content-Encoding': 'gzip'});
 
-		res.end(pageCompiler.compile(name));
+		zlib.gzip(Buffer.from(pageCompiler.compile(name), 'utf8'), (_, result) => {
+      res.end(result);
+    });
 	};
 };
