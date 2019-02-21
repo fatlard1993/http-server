@@ -29,7 +29,7 @@ const rootFolder = findRoot(process.cwd());
 const pageCompiler = module.exports = {
 	includesText: '// includes ',
 	babelText: '// babel',
-	startText: '<!DOCTYPE html><html><head>',
+	startText: '<!DOCTYPE html><html lang="en"><head>',
 	headText: '<title>XXX</title>',
 	openText: '</head><body>',
 	closeText: '</body></html>',
@@ -92,8 +92,8 @@ const pageCompiler = module.exports = {
 			else text = newText + text;
 		}
 
-		if(this.cache[newParentFileLocation].extension === 'html' && this.cache[fileLocation].extension === 'css'){
-			log(2)(`Rendering ${this.cache[fileLocation].name} css`);
+		if(parentFileLocation && this.cache[parentFileLocation].extension === 'html' && this.cache[fileLocation].extension === 'css'){
+			log(1)(`Rendering ${this.cache[fileLocation].name} css`);
 
 			try{
 				text = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNested(), postcssExtend(), postcssVariables()]).process(text);
