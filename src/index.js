@@ -19,5 +19,5 @@ module.exports = function httpServer(port, homePath = '/home'){
 
 	app.listen(port);
 
-	return { app, pageCompiler, staticServer, sendPage	};
+	return { app, pageCompiler, staticServer, sendPage };
 };
