@@ -169,7 +169,7 @@ const pageCompiler = module.exports = {
 
 			this.cache[fileLocation].text = fileText;
 
-			log(1)(`Cached ${fileLocation}`);
+			log()(`Cached ${fileLocation}`);
 		}
 
 		else log(1)(`${fileLocation} has valid cache`);
