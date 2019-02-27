@@ -210,7 +210,7 @@ const pageCompiler = module.exports = {
 				if(x > 1){
 					var pkg = JSON.parse(fs.readFileSync(fileLocation));
 
-					fileLocation = path.join(rootFolder, checks[x].replace('package.json', ''), pkg.main);
+					fileLocation = path.join(rootFolder, checks[x].replace('package.json', ''), pkg['main'+ (extension  === 'css' ? 'Css' : '')]);
 				}
 
 				break;
