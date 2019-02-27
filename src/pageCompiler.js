@@ -56,18 +56,19 @@ const pageCompiler = module.exports = {
 			return '';
 		}
 
-		var text = this.cache[fileLocation].text;
-
 		if(!this.cache[fileLocation].includes){
 			log.info(1)(parentFileLocation ? `Included ${fileLocation} into ${parentFileLocation}` : `Built ${fileLocation}`);
 
-			return text;
+			return this.cache[fileLocation].text;
 		}
 
+		var text = '';
 		var newParentFileLocation = parentFileLocation ? (this.cache[parentFileLocation].extension === 'html' && this.cache[fileLocation].extension !== 'html' ? fileLocation : parentFileLocation) : fileLocation;
 
-		for(var x = 0, count = this.cache[fileLocation].includes.length, includesLocation; x < count; ++x){
+		for(var x = this.cache[fileLocation].includes.length, includesLocation; x >= 0; --x){
 			includesLocation = this.cache[fileLocation].includes[x];
+
+			if(!includesLocation) continue;
 
 			if(included[includesLocation]){
 				log.warn(1)(`Already included ${includesLocation}`);
@@ -86,8 +87,12 @@ const pageCompiler = module.exports = {
 				text = `<${htmlTag}${newText}</${htmlTag}${x === 0 ? this.openText : ''}${text}`;
 			}
 
+			else if(fileExtension === 'css') text += newText;
+
 			else text = newText + text;
 		}
+
+		text += this.cache[fileLocation].text;
 
 		if(parentFileLocation && this.cache[parentFileLocation].extension === 'html' && this.cache[fileLocation].extension === 'css'){
 			log(1)(`Rendering ${this.cache[fileLocation].name} css`);
