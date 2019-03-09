@@ -12,12 +12,18 @@ const redirectTrailingWak = require('./middleware/redirectTrailingWak');
 
 const app = polka({ onError });
 
-module.exports = function httpServer(port, homePath = '/home'){
-	log(`Starting http-server @ port "${port}" with the home path "${homePath}"`);
+const httpServer = module.exports = {
+	app,
+	pageCompiler,
+	staticServer,
+	sendPage,
+	init: function(port, homePath = '/home'){
+		log(`Starting http-server @ port "${port}" with the home path "${homePath}"`);
 
-	app.use(responsePrepper, redirectTrailingWak(homePath), bodyParser.json(), bodyParser.urlencoded({ extended: false }), cookieParser());
+		app.use(responsePrepper, redirectTrailingWak(homePath), bodyParser.json(), bodyParser.urlencoded({ extended: false }), cookieParser());
 
-	app.listen(port);
+		app.listen(port);
 
-	return { app, pageCompiler, staticServer, sendPage };
+		return httpServer;
+	}
 };
