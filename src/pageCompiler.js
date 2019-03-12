@@ -115,7 +115,7 @@ const pageCompiler = module.exports = {
 	loadFileCache: function(fileLocation){
 		if(!fileLocation) return;
 
-		if(!process.env.DEV && this.cache[fileLocation]) return;
+		// if(!process.env.DEV && this.cache[fileLocation]) return;
 
 		var toCache = !this.cache[fileLocation], mtime;
 
