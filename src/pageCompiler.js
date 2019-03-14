@@ -204,7 +204,7 @@ const pageCompiler = module.exports = {
 		return parsedIncludes;
 	},
 	findFile: function(name, extension){
-		var fileLocation, checks = [`client/${extension}/${name}.${extension}`, `client/${extension}/_${name}.${extension}`, `node_modules/${name}/package.json`, `../node_modules/${name}/package.json`];
+		var fileLocation, checks = [`client/${extension}/${name}.${extension}`, `client/${extension}/_${name}.${extension}`, `node_modules/${name}/package.json`, `../node_modules/${name}/package.json`, `../../node_modules/${name}/package.json`];
 
 		for(var x = 0, count = checks.length; x < count; ++x){
 			fileLocation = path.join(rootFolder, checks[x]);
