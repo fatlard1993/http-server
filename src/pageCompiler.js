@@ -180,7 +180,7 @@ const pageCompiler = module.exports = {
 		else log(1)(`${fileLocation} has valid cache`);
 	},
 	getIncludes: function(text, extension){
-		var firstLine = /(.*)\n/.exec(text)[1];
+		var firstLine = /(.*)\n?/.exec(text)[1];
 
 		if(!firstLine.startsWith(this.includesText)) return;
 
