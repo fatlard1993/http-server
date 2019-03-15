@@ -154,7 +154,9 @@ const pageCompiler = module.exports = {
 				this.cache[fileLocation].mtime = String(fs.statSync(fileLocation).mtime);
 				this.cache[fileLocation].includes = this.getIncludes(fileText, this.cache[fileLocation]);
 
-				if(this.cache[fileLocation].includes) fileText = fileText.replace(/.*\n/, '');
+				if(this.cache[fileLocation].extension === 'css') fileText = fileText.replace(/\/\/.*\n?/g, '');
+
+				else if(this.cache[fileLocation].includes) fileText = fileText.replace(/.*\n/, '');
 
 				if(this.cache[fileLocation].extension === 'js' && /^(.*)\n?(.*)\n?/.exec(fileText)[1].startsWith(this.babelText)){
 					try{
