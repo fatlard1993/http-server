@@ -8,7 +8,6 @@ const postcssNested = require('postcss-nested');
 const postcssExtend = require('postcss-extend-rule');
 const postcssVariables = require('postcss-simple-vars');
 const findRoot = require('find-root');
-const now = require('performance-now');
 const fsExtended = require('fs-extended');
 const log = require('log');
 const util = require('js-util');
@@ -25,7 +24,6 @@ const babelOptions = {
 
 const rootFolder = findRoot(process.cwd());
 
-//todo look into caching rendered css
 //todo inline manifest file: <link rel="manifest" href='data:application/manifest+json,{}'/>
 
 const pageCompiler = module.exports = {
@@ -60,7 +58,7 @@ const pageCompiler = module.exports = {
 				continue;
 			}
 
-			file[this.cache[files[x]].extension] += this.cache[files[x]].text;
+			file[this.cache[files[x]].extension] += `\n${this.cache[files[x]].text}`;
 		}
 
 		file.html += this.cache[fileLocation].text;
@@ -68,9 +66,17 @@ const pageCompiler = module.exports = {
 		this.headFileLocation = this.headFileLocation || this.findFile('head', 'html');
 		this.cacheFile(this.headFileLocation);
 
+		if(file.css.length){
+			log()(`Rendering ${name} css`, file.css);
+
+			file.css = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNested(), postcssExtend(), postcssVariables()]).process(file.css);
+		}
+
 		file.text += `${this.startText}${this.cache[this.headFileLocation].text.replace('XXX', name)}`;
 		file.text += `<script>${file.js}</script><style>${file.css}</style>`;
 		file.text += `${this.openText}${dynamicContent ? file.html.replace('YYY', dynamicContent) : file.html}${this.closeText}`;
+
+		//todo cache file text and invalidate on any includes changes
 
 		return file.text;
 	},
@@ -135,7 +141,7 @@ const pageCompiler = module.exports = {
 			this.cache[fileLocation].extension = fileStats[3];
 
 			if(!fileText){
-				log.error(fileLocation, 'does not exist');
+				log.error(`Could not include "${fileLocation}", does not exist`);
 
 				mtime = 'no file';
 
