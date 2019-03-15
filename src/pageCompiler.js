@@ -33,10 +33,6 @@ const pageCompiler = module.exports = {
 	headText: '<title>XXX</title>',
 	openText: '</head><body>',
 	closeText: '</body></html>',
-	includesTag: {
-		js: 'script>',
-		css: 'style>'
-	},
 	cache: {},
 	buildFile: function(name, dynamicContent){
 		var fileLocation = this.findFile(name, 'html');
