@@ -42,8 +42,6 @@ const pageCompiler = module.exports = {
 		var fileLocation = this.findFile(name, 'html');
 		var files = this.cacheFileAndIncludes(fileLocation);
 
-		log(files);
-
 		var file = {
 			html: '',
 			js: '',
@@ -67,7 +65,7 @@ const pageCompiler = module.exports = {
 		this.cacheFile(this.headFileLocation);
 
 		if(file.css.length){
-			log()(`Rendering ${name} css`, file.css);
+			log()(`Rendering ${name} css`);
 
 			file.css = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNested(), postcssExtend(), postcssVariables()]).process(file.css);
 		}
@@ -85,7 +83,7 @@ const pageCompiler = module.exports = {
 
 		if(!this.cache[fileLocation] || !this.cache[fileLocation].includes) return files;
 
-		for(var x = this.cache[fileLocation].includes.length, includesLocation; x >= 0; --x){
+		for(var x = 0, count = this.cache[fileLocation].includes.length, includesLocation; x < count; ++x){
 			includesLocation = this.cache[fileLocation].includes[x];
 
 			if(!includesLocation){
@@ -97,14 +95,22 @@ const pageCompiler = module.exports = {
 			var oldIndex = files.indexOf(includesLocation);
 
 			if(oldIndex >= 0){
-				if(oldIndex > 0) files = util.adjustArr(files, oldIndex, Math.max(0, oldIndex - 1));
+				if(oldIndex > 0){
+					files = util.adjustArr(files, oldIndex, 0);
+
+					if(this.cache[includesLocation].includes){
+						for(var y = 0, yCount = this.cache[includesLocation].includes.length; y < yCount; ++y){
+							files = util.adjustArr(files, files.indexOf(this.cache[includesLocation].includes[y]), 0);
+						}
+					}
+				}
 
 				log.warn(1)(`Already included ${includesLocation} ${oldIndex}`);
 
 				continue;
 			}
 
-			files.push(includesLocation);
+			files.unshift(includesLocation);
 
 			this.cacheFileAndIncludes(includesLocation, files);
 		}
@@ -211,6 +217,7 @@ const pageCompiler = module.exports = {
 			`client/${extension}/${name}.${extension}`,
 			`client/${extension}/_${name}.${extension}`,
 			`src/${name}.${extension}`,
+			`src/_${name}.${extension}`,
 			`node_modules/${name}/package.json`,
 			`../node_modules/${name}/package.json`,
 			`../../node_modules/${name}/package.json`
@@ -222,7 +229,7 @@ const pageCompiler = module.exports = {
 			if(fs.existsSync(fileLocation)){
 				log.info(2)(fileLocation, 'exists');
 
-				if(x > 2){ //reading location from package.json
+				if(x > 3){ //reading location from package.json
 					var pkg = JSON.parse(fs.readFileSync(fileLocation));
 
 					fileLocation = path.join(filePath, checks[x].replace('package.json', ''), pkg['main'+ (extension  === 'css' ? 'Css' : '')]);
