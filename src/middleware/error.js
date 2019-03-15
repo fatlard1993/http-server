@@ -36,5 +36,5 @@ const error = module.exports = function(err, req, res, next){
 		return res.redirect(307, err.redirectPath);
 	}
 
-	res.status(err.code).end(pageCompiler.compile('error', detail));
+	res.status(err.code).end(pageCompiler.buildFile('error', detail));
 };

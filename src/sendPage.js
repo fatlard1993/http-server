@@ -11,7 +11,7 @@ module.exports = function sendPage(name, status){
 
 		var start = now();
 
-		zlib.gzip(Buffer.from(pageCompiler.compile(name), 'utf8'), (_, result) => {
+		zlib.gzip(Buffer.from(pageCompiler.buildFile(name), 'utf8'), (_, result) => {
 			log(`Time to prepare "${name}": ${((now() - start) / 1000).toFixed(2)}s`);
 
 			res.end(result);

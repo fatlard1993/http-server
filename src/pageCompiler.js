@@ -11,6 +11,7 @@ const findRoot = require('find-root');
 const now = require('performance-now');
 const fsExtended = require('fs-extended');
 const log = require('log');
+const util = require('js-util');
 
 const autoprefixerOptions = {
 	flexBox: 'no-2009',
@@ -39,83 +40,73 @@ const pageCompiler = module.exports = {
 		css: 'style>'
 	},
 	cache: {},
-	compile: function(name, dynamicContent){
-		var headHtml = this.getFileWithIncludes(this.findFile('head', 'html'));
-		var pageHtml = this.getFileWithIncludes(this.findFile(name, 'html'));
+	buildFile: function(name, dynamicContent){
+		var fileLocation = this.findFile(name, 'html');
+		var files = this.cacheFileAndIncludes(fileLocation);
 
-		var fullHTML = this.startText + headHtml.replace('XXX', name) + pageHtml + this.closeText;
+		log(files);
 
-		return dynamicContent ? fullHTML.replace('YYY', dynamicContent) : fullHTML;
-	},
-	getFileWithIncludes: function(fileLocation, parentFileLocation, included = {}){
-		this.loadFileCache(fileLocation);
+		var file = {
+			html: '',
+			js: '',
+			css: '',
+			text: ''
+		};
 
-		if(!this.cache[fileLocation]){
-			log.warn(`${fileLocation} has no valid cache entry`);
-
-			return '';
-		}
-
-		if(!this.cache[fileLocation].includes){
-			log.info(1)(parentFileLocation ? `Included ${fileLocation} into ${parentFileLocation}` : `Built ${fileLocation}`);
-
-			return this.cache[fileLocation].text;
-		}
-
-		var text = '';
-		var newParentFileLocation = parentFileLocation ? (this.cache[parentFileLocation].extension === 'html' && this.cache[fileLocation].extension !== 'html' ? fileLocation : parentFileLocation) : fileLocation;
-
-		for(var x = this.cache[fileLocation].includes.length, includesLocation; x >= 0; --x){
-			includesLocation = this.cache[fileLocation].includes[x];
-
-			if(!includesLocation) continue;
-
-			if(included[includesLocation]){
-				log.warn(1)(`Already included ${includesLocation}`);
+		for(var x = 0, count = files.length; x < count; ++x){
+			if(!this.cache[files[x]]){
+				log.warn(`No file cache: ${files[x]}`);
 
 				continue;
 			}
 
-			included[includesLocation] = 1;
-
-			var fileStats = /^(.*\/)?([^\.]*)\.?(.*)?$/.exec(includesLocation);
-			var fileExtension = fileStats[3];
-			var htmlTag = this.includesTag[fileExtension];
-			var newText = this.getFileWithIncludes(includesLocation, newParentFileLocation, included);
-
-			if(this.cache[fileLocation].extension === 'html' && fileExtension !== 'html'){
-				text = `<${htmlTag}${newText}</${htmlTag}${x === 0 ? this.openText : ''}${text}`;
-			}
-
-			else if(fileExtension === 'css') text += newText;
-
-			else text = newText + text;
+			file[this.cache[files[x]].extension] += this.cache[files[x]].text;
 		}
 
-		text += this.cache[fileLocation].text;
+		file.html += this.cache[fileLocation].text;
 
-		if(parentFileLocation && this.cache[parentFileLocation].extension === 'html' && this.cache[fileLocation].extension === 'css'){
-			log(1)(`Rendering ${this.cache[fileLocation].name} css`);
+		this.headFileLocation = this.headFileLocation || this.findFile('head', 'html');
+		this.cacheFile(this.headFileLocation);
 
-			try{
-				text = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNested(), postcssExtend(), postcssVariables()]).process(text);
-			}
+		file.text += `${this.startText}${this.cache[this.headFileLocation].text.replace('XXX', name)}`;
+		file.text += `<script>${file.js}</script><style>${file.css}</style>`;
+		file.text += `${this.openText}${dynamicContent ? file.html.replace('YYY', dynamicContent) : file.html}${this.closeText}`;
 
-			catch(err){
-				log.error('Error rendering CSS: ', this.cache[fileLocation].name, err);
-
-				text = err;
-			}
-		}
-
-		log.info(1)(parentFileLocation ? `Included ${fileLocation} into ${parentFileLocation}` : `Built ${fileLocation}`);
-
-		return text;
+		return file.text;
 	},
-	loadFileCache: function(fileLocation){
-		if(!fileLocation) return;
+	cacheFileAndIncludes: function(fileLocation, files = []){
+		this.cacheFile(fileLocation);
 
-		// if(!process.env.DEV && this.cache[fileLocation]) return;
+		if(!this.cache[fileLocation] || !this.cache[fileLocation].includes) return files;
+
+		for(var x = this.cache[fileLocation].includes.length, includesLocation; x >= 0; --x){
+			includesLocation = this.cache[fileLocation].includes[x];
+
+			if(!includesLocation){
+				log.warn(1)(`No location "${includesLocation}"`);
+
+				continue;
+			}
+
+			var oldIndex = files.indexOf(includesLocation);
+
+			if(oldIndex >= 0){
+				if(oldIndex > 0) files = util.adjustArr(files, oldIndex, Math.max(0, oldIndex - 1));
+
+				log.warn(1)(`Already included ${includesLocation} ${oldIndex}`);
+
+				continue;
+			}
+
+			files.push(includesLocation);
+
+			this.cacheFileAndIncludes(includesLocation, files);
+		}
+
+		return files;
+	},
+	cacheFile: function(fileLocation){
+		if(!fileLocation) return;
 
 		var toCache = !this.cache[fileLocation], mtime;
 
@@ -153,7 +144,7 @@ const pageCompiler = module.exports = {
 
 			else{
 				this.cache[fileLocation].mtime = String(fs.statSync(fileLocation).mtime);
-				this.cache[fileLocation].includes = this.getIncludes(fileText, this.cache[fileLocation].extension);
+				this.cache[fileLocation].includes = this.getIncludes(fileText, this.cache[fileLocation]);
 
 				if(this.cache[fileLocation].includes) fileText = fileText.replace(/.*\n/, '');
 
@@ -179,7 +170,7 @@ const pageCompiler = module.exports = {
 
 		else log(1)(`${fileLocation} has valid cache`);
 	},
-	getIncludes: function(text, extension){
+	getIncludes: function(text, file){
 		var firstLine = /(.*)\n?/.exec(text)[1];
 
 		if(!firstLine.startsWith(this.includesText)) return;
@@ -190,32 +181,45 @@ const pageCompiler = module.exports = {
 			fileStats = /^(.*\/)?([^\.]*)\.?(.*)?$/.exec(includes[x]);
 			filePath = fileStats[1];
 			fileName = fileStats[2];
-			fileExtension = fileStats[3] || extension;
+			fileExtension = fileStats[3] || file.extension;
 
 			if(!fileName || fileName === 'undefined') continue;
 
 			includes[x] = `${filePath}${fileName}.${fileExtension}`;
 
-			if(!fs.existsSync(includes[x])) includes[x] = this.findFile(fileName, fileExtension);
+			if(!fs.existsSync(includes[x])) includes[x] = this.findFile(fileName, fileExtension, file.path);
 
 			if(includes[x] && fs.existsSync(includes[x])) parsedIncludes.push(includes[x]);
 		}
 
 		return parsedIncludes;
 	},
-	findFile: function(name, extension){
-		var fileLocation, checks = [`client/${extension}/${name}.${extension}`, `client/${extension}/_${name}.${extension}`, `node_modules/${name}/package.json`, `../node_modules/${name}/package.json`, `../../node_modules/${name}/package.json`];
+	findFile: function(name, extension, filePath){
+		if(filePath) filePath = findRoot(filePath);
+		else filePath = rootFolder;
+
+		log(3)(`Finding file: "${name}.${extension}" from: ${filePath}`);
+
+		var fileLocation;
+		var checks = [
+			`client/${extension}/${name}.${extension}`,
+			`client/${extension}/_${name}.${extension}`,
+			`src/${name}.${extension}`,
+			`node_modules/${name}/package.json`,
+			`../node_modules/${name}/package.json`,
+			`../../node_modules/${name}/package.json`
+		];
 
 		for(var x = 0, count = checks.length; x < count; ++x){
-			fileLocation = path.join(rootFolder, checks[x]);
+			fileLocation = path.join(filePath, checks[x]);
 
 			if(fs.existsSync(fileLocation)){
 				log.info(2)(fileLocation, 'exists');
 
-				if(x > 1){
+				if(x > 2){ //reading location from package.json
 					var pkg = JSON.parse(fs.readFileSync(fileLocation));
 
-					fileLocation = path.join(rootFolder, checks[x].replace('package.json', ''), pkg['main'+ (extension  === 'css' ? 'Css' : '')]);
+					fileLocation = path.join(filePath, checks[x].replace('package.json', ''), pkg['main'+ (extension  === 'css' ? 'Css' : '')]);
 				}
 
 				break;
