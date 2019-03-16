@@ -27,7 +27,7 @@ const error = module.exports = function(err, req, res, next){
 		}
 	}
 
-	log.error()(`${req.originalUrl} | ${titles[err.code]}`);
+	log.error()(`${req.originalUrl} | ${titles[err.code]} | ${detail}`);
 	log.error(1)(err);
 
 	if(err.redirectPath){
