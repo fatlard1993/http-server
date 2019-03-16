@@ -75,8 +75,6 @@ const pageCompiler = module.exports = {
 			file.css = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNested(), postcssExtend(), postcssVariables()]).process(file.css);
 		}
 
-		log(file.webmanifest);
-
 		file.text += `${this.startText}${this.cache[this.headFileLocation].text.replace('XXX', name)}`;
 
 		if(file.webmanifest) file.text += `<link rel="manifest" href='data:application/manifest+json,${JSON.stringify(JSON.parse(file.webmanifest))}'/>`;
@@ -162,7 +160,7 @@ const pageCompiler = module.exports = {
 
 				fileText = this.prebuilt[this.cache[fileLocation].name] || '';
 
-				log[fileText ? 'warn' : 'error'](`Could not include "${fileLocation}", does not exist`);
+				if(!fileText) log.error(`Could not include "${fileLocation}", does not exist`);
 			}
 
 			else this.cache[fileLocation].mtime = String(fs.statSync(fileLocation).mtime);
