@@ -19,12 +19,10 @@ const autoprefixerOptions = {
 };
 
 const babelOptions = {
-	presets: ['@babel/env']//, ['minify', { builtIns: false }]
+	presets: ['@babel/env']
 };
 
 const rootFolder = findRoot(process.cwd());
-
-//todo inline manifest file: <link rel="manifest" href='data:application/manifest+json,{}'/>
 
 const pageCompiler = module.exports = {
 	includesText: '// includes ',
@@ -52,6 +50,7 @@ const pageCompiler = module.exports = {
 			html: '',
 			js: '',
 			css: '',
+			webmanifest: '',
 			text: ''
 		};
 
@@ -76,11 +75,17 @@ const pageCompiler = module.exports = {
 			file.css = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNested(), postcssExtend(), postcssVariables()]).process(file.css);
 		}
 
+		log(file.webmanifest);
+
 		file.text += `${this.startText}${this.cache[this.headFileLocation].text.replace('XXX', name)}`;
-		file.text += `<script>${file.js}</script><style>${file.css}</style>`;
+
+		if(file.webmanifest) file.text += `<link rel="manifest" href='data:application/manifest+json,${JSON.stringify(JSON.parse(file.webmanifest))}'/>`;
+		if(file.js) file.text += `<script>${file.js}</script>`;
+		if(file.css) file.text += `<style>${file.css}</style>`;
+
 		file.text += `${this.openText}${dynamicContent ? file.html.replace('YYY', dynamicContent) : file.html}${this.closeText}`;
 
-		//todo cache file text and invalidate on any includes changes
+		//todo cache entire file text and invalidate on any includes changes
 
 		return file.text;
 	},
@@ -227,21 +232,22 @@ const pageCompiler = module.exports = {
 			`client/${extension}/_${name}.${extension}`,
 			`src/${name}.${extension}`,
 			`src/_${name}.${extension}`,
+			`client/resources/${name}.${extension}`,
 			`node_modules/${name}/package.json`,
 			`../node_modules/${name}/package.json`,
 			`../../node_modules/${name}/package.json`
 		];
 
 		for(var x = 0, count = checks.length; x < count; ++x){
-			fileLocation = path.join(filePath, checks[x]);
+			fileLocation = path.resolve(filePath, checks[x]);
 
 			if(fs.existsSync(fileLocation)){
 				log.info(2)(fileLocation, 'exists');
 
-				if(x > 3){ //reading location from package.json
+				if(x > 4){// reading location from a package.json
 					var pkg = JSON.parse(fs.readFileSync(fileLocation));
 
-					fileLocation = path.join(filePath, checks[x].replace('package.json', ''), pkg['main'+ (extension  === 'css' ? 'Css' : '')]);
+					fileLocation = path.resolve(filePath, checks[x].replace('package.json', ''), pkg['main'+ (extension  === 'css' ? 'Css' : '')]);
 				}
 
 				break;
