@@ -17,7 +17,13 @@ const error = module.exports = function(err, req, res, next){
 		'500': '500 - Internal Server Error'
 	};
 
-	if(!err.detail){
+	detailCreator: if(!err.detail){
+		if(titles[err.code]){
+			detail = titles[err.code];
+
+			break detailCreator;
+		}
+
 		try{ detail = JSON.stringify(err, null, '  '); }
 
 		catch(e){
@@ -27,7 +33,7 @@ const error = module.exports = function(err, req, res, next){
 		}
 	}
 
-	log.error()(`${req.originalUrl} | ${titles[err.code]} | ${detail}`);
+	log.error(`${req.originalUrl} | ${titles[err.code]} | "${err.detail || 'No detail'}"`);
 	log.error(1)(err);
 
 	if(err.redirectPath){
@@ -36,5 +42,9 @@ const error = module.exports = function(err, req, res, next){
 		return res.redirect(307, err.redirectPath);
 	}
 
-	res.status(err.code).end(pageCompiler.buildFile('error', detail));
+	res.status(err.code);
+
+	if(res.reqType === 'page') res.end(pageCompiler.buildFile('error', detail));
+
+	else res.end();
 };

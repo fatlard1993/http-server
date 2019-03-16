@@ -3,7 +3,9 @@ const fs = require('fs');
 const log = require('log');
 
 const responsePrepper = module.exports = function(req, res, next){
-	log()(`\nReq Url - ${req.originalUrl}`);
+	res.reqType = /^.*\.[^\\]+$/g.test(req.originalUrl) ? 'file' : 'page';
+
+	log()(`\nReq Url - ${req.originalUrl} | ${res.reqType}`);
 
 	res.sendFile = function(path){
 		log()(`Send file - ${path}`);
