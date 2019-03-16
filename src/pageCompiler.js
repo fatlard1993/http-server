@@ -46,6 +46,8 @@ const pageCompiler = module.exports = {
 		var fileLocation = this.findFile(name, 'html');
 		var files = this.cacheFileAndIncludes(fileLocation);
 
+		log(1)(`Building file "${name}" with: `, files);
+
 		var file = {
 			html: '',
 			js: '',
