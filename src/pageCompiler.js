@@ -33,6 +33,14 @@ const pageCompiler = module.exports = {
 	headText: '<title>XXX</title>',
 	openText: '</head><body>',
 	closeText: '</body></html>',
+	prebuilt: {
+		head: '<title>XXX</title>',
+		error: `// includes error.js error.css
+			<p>Server says...</p>
+			<pre>YYY</pre>
+			<button onClick="window.location.href = '/'">Back</button>
+		`
+	},
 	cache: {},
 	buildFile: function(name, dynamicContent){
 		var fileLocation = this.findFile(name, 'html');
@@ -55,7 +63,7 @@ const pageCompiler = module.exports = {
 			file[this.cache[files[x]].extension] += `\n${this.cache[files[x]].text}`;
 		}
 
-		file.html += this.cache[fileLocation].text;
+		file.html += this.cache[fileLocation] ? this.cache[fileLocation].text : '';
 
 		this.headFileLocation = this.headFileLocation || this.findFile('head', 'html');
 		this.cacheFile(this.headFileLocation);
@@ -143,33 +151,32 @@ const pageCompiler = module.exports = {
 			this.cache[fileLocation].extension = fileStats[3];
 
 			if(!fileText){
-				log.error(`Could not include "${fileLocation}", does not exist`);
-
 				mtime = 'no file';
 
-				fileText = (this.cache[fileLocation].name === 'head' && this.cache[fileLocation].extension === 'html') ? this.headText : '';
+				fileText = this.prebuilt[this.cache[fileLocation].name] || '';
+
+				log[fileText ? 'warn' : 'error'](`Could not include "${fileLocation}", does not exist`);
 			}
 
-			else{
-				this.cache[fileLocation].mtime = String(fs.statSync(fileLocation).mtime);
-				this.cache[fileLocation].includes = this.getIncludes(fileText, this.cache[fileLocation]);
+			else this.cache[fileLocation].mtime = String(fs.statSync(fileLocation).mtime);
 
-				if(this.cache[fileLocation].extension === 'css') fileText = fileText.replace(/\/\/.*\n?/g, '');
+			this.cache[fileLocation].includes = this.getIncludes(fileText, this.cache[fileLocation]);
 
-				else if(this.cache[fileLocation].includes) fileText = fileText.replace(/.*\n/, '');
+			if(this.cache[fileLocation].extension === 'css') fileText = fileText.replace(/\/\/.*\n?/g, '');
 
-				if(this.cache[fileLocation].extension === 'js' && /^(.*)\n?(.*)\n?/.exec(fileText)[1].startsWith(this.babelText)){
-					try{
-						log(2)('Running babel on JS: ', fileLocation);
+			else if(this.cache[fileLocation].includes) fileText = fileText.replace(/.*\n/, '');
 
-						fileText = babel.transformSync(fileText, babelOptions).code;
-					}
+			if(this.cache[fileLocation].extension === 'js' && /^(.*)\n?(.*)\n?/.exec(fileText)[1].startsWith(this.babelText)){
+				try{
+					log(2)('Running babel on JS: ', fileLocation);
 
-					catch(err){
-						log.error('Error running babel on JS: ', fileLocation, err);
+					fileText = babel.transformSync(fileText, babelOptions).code;
+				}
 
-						fileText = err;
-					}
+				catch(err){
+					log.error('Error running babel on JS: ', fileLocation, err);
+
+					fileText = err;
 				}
 			}
 
@@ -201,6 +208,8 @@ const pageCompiler = module.exports = {
 
 			if(includes[x] && fs.existsSync(includes[x])) parsedIncludes.push(includes[x]);
 		}
+
+		log(1)(`Parsed includes for ${file.name}${file.extension}`, parsedIncludes);
 
 		return parsedIncludes;
 	},
@@ -243,8 +252,8 @@ const pageCompiler = module.exports = {
 			}
 		}
 
-		if(!fileLocation) log.error(name, extension, 'does not exist');
+		if(!fileLocation) log.error(`Could not find file "${name}.${extension}" does not exist`);
 
-		return fileLocation;
+		return fileLocation || `prebuilt/${name}.${extension}`;
 	}
 };
