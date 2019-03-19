@@ -34,7 +34,7 @@
 		"performance-now": "^2.1.0",
 		"polka": "^0.5.2",
 		"postcss-extend-rule": "^2.0.0",
-		"postcss-nested": "^4.1.1",
+		"postcss-nesting": "^4.1.1",
 		"postcss-simple-vars": "^5.0.1",
 		"serve-static": "^1.13.2"
 	},

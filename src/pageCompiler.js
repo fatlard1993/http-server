@@ -4,7 +4,7 @@ const fs = require('fs');
 const babel = require('@babel/core');
 const postcss = require('postcss');
 const postcssAutoprefixer = require('autoprefixer');
-const postcssNested = require('postcss-nested');
+const postcssNesting = require('postcss-nesting');
 const postcssExtend = require('postcss-extend-rule');
 const postcssVariables = require('postcss-simple-vars');
 const findRoot = require('find-root');
@@ -72,7 +72,7 @@ const pageCompiler = module.exports = {
 		if(file.css.length){
 			log()(`Rendering ${name} css`);
 
-			file.css = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNested(), postcssExtend(), postcssVariables()]).process(file.css);
+			file.css = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNesting(), postcssExtend(), postcssVariables()]).process(file.css);
 		}
 
 		file.text += `${this.startText}${this.cache[this.headFileLocation].text.replace('XXX', name)}`;
