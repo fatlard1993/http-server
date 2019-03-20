@@ -20,7 +20,9 @@
 		"extends": "rules"
 	},
 	"devDependencies": {
-		"eslint-config-rules": "github:fatlard1993/eslint-config-rules"
+		"eslint-config-rules": "github:fatlard1993/eslint-config-rules#2.x.x",
+		"babel-eslint": "^10.0.1",
+		"eslint": "^5.15.3"
 	},
 	"dependencies": {
 		"@babel/core": "^7.2.2",
@@ -30,17 +32,13 @@
 		"body-parser": "^1.18.3",
 		"cookie-parser": "^1.4.3",
 		"find-root": "^1.1.0",
-		"fs-extended": "github:fatlard1993/fs-extended",
+		"fs-extended": "github:fatlard1993/fs-extended#2.x.x",
 		"performance-now": "^2.1.0",
 		"polka": "^0.5.2",
 		"postcss-extend-rule": "^2.0.0",
 		"postcss-nesting": "^4.1.1",
 		"postcss-simple-vars": "^5.0.1",
-		"serve-static": "^1.13.2"
-	},
-	"peerDependencies": {
-		"babel-eslint": ">= 10",
-		"eslint": ">= 5",
-		"log": "github:fatlard1993/log"
+		"serve-static": "^1.13.2",
+		"log": "github:fatlard1993/log#2.x.x"
 	}
 }
