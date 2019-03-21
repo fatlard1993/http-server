@@ -17,8 +17,10 @@ const httpServer = module.exports = {
 	pageCompiler,
 	staticServer,
 	sendPage,
-	init: function(port, homePath = '/home'){
-		log(`Starting http-server @ port "${port}" with the home path "${homePath}"`);
+	init: function(port, rootFolder, homePath = '/home'){
+		log(`Starting http-server from ${rootFolder} @ port "${port}" with the home path "${homePath}"`);
+
+		process.env.ROOT_FOLDER = rootFolder;
 
 		app.use(responsePrepper, redirectTrailingWak(homePath), bodyParser.json(), bodyParser.urlencoded({ extended: false }), cookieParser());
 

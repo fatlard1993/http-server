@@ -22,8 +22,6 @@ const babelOptions = {
 	presets: ['@babel/env']
 };
 
-const rootFolder = findRoot(process.cwd());
-
 const pageCompiler = module.exports = {
 	includesText: '// includes ',
 	babelText: '// babel',
@@ -220,7 +218,8 @@ const pageCompiler = module.exports = {
 	},
 	findFile: function(name, extension, filePath){
 		if(filePath) filePath = findRoot(filePath);
-		else filePath = rootFolder;
+
+		else filePath = process.env.ROOT_FOLDER;
 
 		log(3)(`Finding file: "${name}.${extension}" from: ${filePath}`);
 
