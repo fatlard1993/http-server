@@ -33,12 +33,12 @@
 		"cookie-parser": "^1.4.3",
 		"find-root": "^1.1.0",
 		"fs-extended": "github:fatlard1993/fs-extended#2.x.x",
+		"log": "github:fatlard1993/log#2.x.x",
 		"performance-now": "^2.1.0",
 		"polka": "^0.5.2",
 		"postcss-extend-rule": "^2.0.0",
-		"postcss-nesting": "^4.1.1",
+		"postcss-nested": "^4.1.2",
 		"postcss-simple-vars": "^5.0.1",
-		"serve-static": "^1.13.2",
-		"log": "github:fatlard1993/log#2.x.x"
+		"serve-static": "^1.13.2"
 	}
 }
