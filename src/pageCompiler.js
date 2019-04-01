@@ -225,12 +225,10 @@ const pageCompiler = module.exports = {
 
 		var fileLocation;
 		var checks = [
-			`client/${extension}/${name}.${extension}`,
-			`client/${extension}/_${name}.${extension}`,
 			`src/${name}.${extension}`,
-			`src/_${name}.${extension}`,
-			`client/resources/${name}.${extension}`,
+			`client/${extension}/${name}.${extension}`,
 			`node_modules/${name}/package.json`,
+			`client/resources/${name}.${extension}`,
 			`../node_modules/${name}/package.json`,
 			`../../node_modules/${name}/package.json`
 		];
@@ -239,9 +237,9 @@ const pageCompiler = module.exports = {
 			fileLocation = path.resolve(filePath, checks[x]);
 
 			if(fs.existsSync(fileLocation)){
-				log.info(2)(fileLocation, 'exists');
+				log.info(3)(fileLocation, 'exists');
 
-				if(x > 4){// reading location from a package.json
+				if(fileLocation.includes('package.json')){// reading location from a package.json
 					var pkg = JSON.parse(fs.readFileSync(fileLocation));
 
 					fileLocation = path.resolve(filePath, checks[x].replace('package.json', ''), pkg['main'+ (extension  === 'css' ? 'Css' : '')]);
@@ -251,7 +249,7 @@ const pageCompiler = module.exports = {
 			}
 
 			else{
-				log.warn(2)(fileLocation, 'does not exist');
+				log.warn(3)(fileLocation, 'does not exist');
 
 				fileLocation = null;
 			}
