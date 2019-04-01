@@ -227,6 +227,7 @@ const pageCompiler = module.exports = {
 		var checks = [
 			`src/${name}.${extension}`,
 			`client/${extension}/${name}.${extension}`,
+			`node_modules/${name}/src/index.${extension}`,
 			`node_modules/${name}/package.json`,
 			`client/resources/${name}.${extension}`,
 			`../node_modules/${name}/package.json`,
