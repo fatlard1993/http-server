@@ -67,17 +67,17 @@ const pageCompiler = module.exports = {
 		this.headFileLocation = this.headFileLocation || this.findFile('head', 'html');
 		this.cacheFile(this.headFileLocation);
 
-		if(file.css.length){
+		if(file.css.length && !this.cache[fileLocation].postcss){
 			log()(`Rendering ${name} css`);
 
-			file.css = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNesting(), postcssExtend(), postcssVariables()]).process(file.css);
+			this.cache[fileLocation].postcss = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNesting(), postcssExtend(), postcssVariables()]).process(file.css);
 		}
 
 		file.text += `${this.startText}${this.cache[this.headFileLocation].text.replace('XXX', name)}`;
 
 		if(file.webmanifest) file.text += `<link rel="manifest" href='data:application/manifest+json,${JSON.stringify(JSON.parse(file.webmanifest))}'/>`;
 		if(file.js) file.text += `<script>${file.js}</script>`;
-		if(file.css) file.text += `<style>${file.css}</style>`;
+		if(this.cache[fileLocation].postcss) file.text += `<style>${this.cache[fileLocation].postcss}</style>`;
 
 		file.text += `${this.openText}${dynamicContent ? file.html.replace('YYY', dynamicContent) : file.html}${this.closeText}`;
 
@@ -85,8 +85,10 @@ const pageCompiler = module.exports = {
 
 		return file.text;
 	},
-	cacheFileAndIncludes: function(fileLocation, files = []){
-		this.cacheFile(fileLocation);
+	cacheFileAndIncludes: function(fileLocation, parentName, files = []){
+		parentName = parentName || fileLocation;
+
+		this.cacheFile(fileLocation, parentName);
 
 		if(!this.cache[fileLocation] || !this.cache[fileLocation].includes) return files;
 
@@ -119,12 +121,12 @@ const pageCompiler = module.exports = {
 
 			files.unshift(includesLocation);
 
-			this.cacheFileAndIncludes(includesLocation, files);
+			this.cacheFileAndIncludes(includesLocation, parentName, files);
 		}
 
 		return files;
 	},
-	cacheFile: function(fileLocation){
+	cacheFile: function(fileLocation, parentName){
 		if(!fileLocation) return;
 
 		var toCache = !this.cache[fileLocation], mtime;
@@ -165,7 +167,11 @@ const pageCompiler = module.exports = {
 
 			this.cache[fileLocation].includes = this.getIncludes(fileText, this.cache[fileLocation]);
 
-			if(this.cache[fileLocation].extension === 'css') fileText = fileText.replace(/\/\/.*\n?/g, '');
+			if(this.cache[fileLocation].extension === 'css'){
+				fileText = fileText.replace(/\/\/.*\n?/g, '');
+
+				delete this.cache[parentName].postcss;
+			}
 
 			else if(this.cache[fileLocation].includes) fileText = fileText.replace(/.*\n/, '');
 
