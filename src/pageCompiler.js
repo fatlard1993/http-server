@@ -177,9 +177,11 @@ const pageCompiler = module.exports = {
 
 			if(this.cache[fileLocation].extension === 'js' && /^(.*)\n?(.*)\n?/.exec(fileText)[1].startsWith(this.babelText)){
 				try{
-					log(2)('Running babel on JS: ', fileLocation);
+					log()('Running babel on JS: ', fileLocation);
 
 					fileText = babel.transformSync(fileText, babelOptions).code;
+
+					fs.writeFileSync(fileLocation, this.cache[fileLocation].includesText +'\n'+ fileText);
 				}
 
 				catch(err){
@@ -200,6 +202,8 @@ const pageCompiler = module.exports = {
 		var firstLine = /(.*)\n?/.exec(text)[1];
 
 		if(!firstLine.startsWith(this.includesText)) return;
+
+		file.includesText = firstLine;
 
 		var includes = firstLine.substring(12).split(' '), parsedIncludes = [];
 
@@ -246,7 +250,7 @@ const pageCompiler = module.exports = {
 			if(fs.existsSync(fileLocation)){
 				log.info(3)(fileLocation, 'exists');
 
-				if(fileLocation.includes('package.json')){// reading location from a package.json
+				if(fileLocation.includes('package.json')){
 					var pkg = JSON.parse(fs.readFileSync(fileLocation));
 
 					fileLocation = path.resolve(filePath, checks[x].replace('package.json', ''), pkg['main'+ (extension  === 'css' ? 'Css' : '')]);
