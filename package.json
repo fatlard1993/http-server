@@ -39,6 +39,7 @@
 		"postcss-extend-rule": "^2.0.0",
 		"postcss-nested": "^4.1.2",
 		"postcss-simple-vars": "^5.0.1",
-		"serve-static": "^1.13.2"
+		"serve-static": "^1.13.2",
+		"yargs": "^13.2.2"
 	}
 }

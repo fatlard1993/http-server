@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 
+const args = require('yargs').argv;
 const babel = require('@babel/core');
 const postcss = require('postcss');
 const postcssAutoprefixer = require('autoprefixer');
@@ -181,7 +182,7 @@ const pageCompiler = module.exports = {
 
 					fileText = babel.transformSync(fileText, babelOptions).code;
 
-					fs.writeFileSync(fileLocation, this.cache[fileLocation].includesText +'\n'+ fileText);
+					if(args.build || args.dist) fs.writeFileSync(fileLocation, this.cache[fileLocation].includesText +'\n'+ fileText);
 				}
 
 				catch(err){
