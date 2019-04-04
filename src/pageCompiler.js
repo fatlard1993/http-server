@@ -182,7 +182,7 @@ const pageCompiler = module.exports = {
 
 					fileText = babel.transformSync(fileText, babelOptions).code;
 
-					if(args.build || args.dist) fs.writeFileSync(fileLocation, this.cache[fileLocation].includesText +'\n'+ fileText);
+					if(!(args.dbg || args.dev) && (args.build || args.dist)) fs.writeFileSync(fileLocation, this.cache[fileLocation].includesText +'\n'+ fileText);
 				}
 
 				catch(err){
