@@ -178,7 +178,7 @@ const pageCompiler = module.exports = {
 
 			if(this.cache[fileLocation].extension === 'js' && /^(.*)\n?(.*)\n?/.exec(fileText)[1].startsWith(this.babelText)){
 				try{
-					log()('Running babel on JS: ', fileLocation);
+					log(1)('Running babel on JS: ', fileLocation);
 
 					fileText = babel.transformSync(fileText, babelOptions).code;
 
