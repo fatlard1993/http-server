@@ -276,7 +276,7 @@ const pageCompiler = module.exports = {
 			}
 		}
 
-		if(!fileLocation) log.error(`Could not find file "${name}.${extension}" for "${filePath}/${fileName}" - does not exist`);
+		if(!fileLocation) log.error(`Could not find file "${name}.${extension}" for "${file && file.location}" - does not exist`);
 
 		return fileLocation || `prebuilt/${name}.${extension}`;
 	}
