@@ -218,7 +218,7 @@ const pageCompiler = module.exports = {
 
 			includes[x] = `${filePath}${fileName}.${fileExtension}`;
 
-			if(!fs.existsSync(includes[x])) includes[x] = this.findFile(fileName, fileExtension, file.path);
+			if(!fs.existsSync(includes[x])) includes[x] = this.findFile(fileName, fileExtension, file.path, file.name);
 
 			if(includes[x] && fs.existsSync(includes[x])) parsedIncludes.push(includes[x]);
 		}
@@ -227,7 +227,7 @@ const pageCompiler = module.exports = {
 
 		return parsedIncludes;
 	},
-	findFile: function(name, extension, filePath){
+	findFile: function(name, extension, filePath, fileName){
 		if(filePath) filePath = findRoot(filePath);
 
 		else filePath = process.env.ROOT_FOLDER;
@@ -246,6 +246,8 @@ const pageCompiler = module.exports = {
 		];
 
 		for(var x = 0, count = checks.length; x < count; ++x){
+			if(name === fileName && x < 2) continue;
+
 			fileLocation = path.resolve(filePath, checks[x]);
 
 			if(fs.existsSync(fileLocation)){
@@ -267,7 +269,7 @@ const pageCompiler = module.exports = {
 			}
 		}
 
-		if(!fileLocation) log.error(`Could not find file "${name}.${extension}" does not exist`);
+		if(!fileLocation) log.error(`Could not find file "${name}.${extension}" for "${filePath}/${fileName}" - does not exist`);
 
 		return fileLocation || `prebuilt/${name}.${extension}`;
 	}
