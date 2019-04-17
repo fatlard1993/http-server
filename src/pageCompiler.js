@@ -152,6 +152,7 @@ const pageCompiler = module.exports = {
 			var fileStats = /^(.*\/)?([^\.]*)\.?(.*)?$/.exec(fileLocation);
 			var fileText = fsExtended.catSync(fileLocation);
 
+			this.cache[fileLocation].location = fileLocation;
 			this.cache[fileLocation].path = fileStats[1];
 			this.cache[fileLocation].name = fileStats[2];
 			this.cache[fileLocation].extension = fileStats[3];
@@ -218,7 +219,7 @@ const pageCompiler = module.exports = {
 
 			includes[x] = `${filePath}${fileName}.${fileExtension}`;
 
-			if(!fs.existsSync(includes[x])) includes[x] = this.findFile(fileName, fileExtension, file.path, file.name);
+			if(!fs.existsSync(includes[x])) includes[x] = this.findFile(fileName, fileExtension, file);
 
 			if(includes[x] && fs.existsSync(includes[x])) parsedIncludes.push(includes[x]);
 		}
@@ -227,8 +228,10 @@ const pageCompiler = module.exports = {
 
 		return parsedIncludes;
 	},
-	findFile: function(name, extension, filePath, fileName){
-		if(filePath) filePath = findRoot(filePath);
+	findFile: function(name, extension, file){
+		var filePath;
+
+		if(file && file.path) filePath = findRoot(file.path);
 
 		else filePath = process.env.ROOT_FOLDER;
 
@@ -246,9 +249,13 @@ const pageCompiler = module.exports = {
 		];
 
 		for(var x = 0, count = checks.length; x < count; ++x){
-			if(name === fileName && x < 2) continue;
-
 			fileLocation = path.resolve(filePath, checks[x]);
+
+			if(file && fileLocation === file.location){
+				log(1)(`Skipping include ${fileLocation} ... Same as source`);
+
+				continue;
+			}
 
 			if(fs.existsSync(fileLocation)){
 				log.info(3)(fileLocation, 'exists');
