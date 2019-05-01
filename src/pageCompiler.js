@@ -38,12 +38,14 @@ const pageCompiler = module.exports = {
 			<button onClick="window.location.href = '/'">Back</button>
 		`
 	},
-	cache: {},
+	cache: {
+		postcss: {}
+	},
 	buildFile: function(name, dynamicContent){
 		var fileLocation = this.findFile(name, 'html');
 		var files = this.cacheFileAndIncludes(fileLocation);
 
-		log(1)(`Building file "${name}" with: `, files);
+		log(1)(`[page-compiler] Building file "${name}" with: `, files);
 
 		var file = {
 			html: '',
@@ -55,7 +57,7 @@ const pageCompiler = module.exports = {
 
 		for(var x = 0, count = files.length; x < count; ++x){
 			if(!this.cache[files[x]]){
-				log.warn(`No file cache: ${files[x]}`);
+				log.warn(`[page-compiler] No file cache: ${files[x]}`);
 
 				continue;
 			}
@@ -68,17 +70,17 @@ const pageCompiler = module.exports = {
 		this.headFileLocation = this.headFileLocation || this.findFile('head', 'html');
 		this.cacheFile(this.headFileLocation);
 
-		if(file.css.length && !this.cache[fileLocation].postcss){
-			log()(`Rendering ${name} css`);
+		if(file.css.length && !this.cache.postcss[fileLocation]){
+			log(`[page-compiler] Rendering ${name} css`);
 
-			this.cache[fileLocation].postcss = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNesting(), postcssExtend(), postcssVariables()]).process(file.css);
+			this.cache.postcss[fileLocation] = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNesting(), postcssExtend(), postcssVariables()]).process(file.css);
 		}
 
 		file.text += `${this.startText}${this.cache[this.headFileLocation].text.replace('XXX', name)}`;
 
 		if(file.webmanifest) file.text += `<link rel="manifest" href='data:application/manifest+json,${JSON.stringify(JSON.parse(file.webmanifest))}'/>`;
 		if(file.js) file.text += `<script>${file.js}</script>`;
-		if(this.cache[fileLocation].postcss) file.text += `<style>${this.cache[fileLocation].postcss}</style>`;
+		if(this.cache.postcss[fileLocation]) file.text += `<style>${this.cache.postcss[fileLocation]}</style>`;
 
 		file.text += `${this.openText}${dynamicContent ? file.html.replace('YYY', dynamicContent) : file.html}${this.closeText}`;
 
@@ -97,7 +99,7 @@ const pageCompiler = module.exports = {
 			includesLocation = this.cache[fileLocation].includes[x];
 
 			if(!includesLocation){
-				log.warn(1)(`No location "${includesLocation}"`);
+				log.warn(1)(`[page-compiler] No location "${includesLocation}"`);
 
 				continue;
 			}
@@ -115,7 +117,7 @@ const pageCompiler = module.exports = {
 					}
 				}
 
-				log.warn(1)(`Already included ${includesLocation} ${oldIndex}`);
+				log.warn(1)(`[page-compiler] Already included ${includesLocation} ${oldIndex}`);
 
 				continue;
 			}
@@ -145,7 +147,7 @@ const pageCompiler = module.exports = {
 		}
 
 		if(toCache){
-			log(2)(`Caching ${fileLocation}`);
+			log(2)(`[page-compiler] Caching ${fileLocation}`);
 
 			this.cache[fileLocation] = this.cache[fileLocation] || {};
 
@@ -162,7 +164,7 @@ const pageCompiler = module.exports = {
 
 				fileText = this.prebuilt[this.cache[fileLocation].name] || '';
 
-				if(!fileText) log.error(`Could not include "${fileLocation}", does not exist`);
+				if(!fileText) log.error(`[page-compiler] Could not include "${fileLocation}", does not exist`);
 			}
 
 			else this.cache[fileLocation].mtime = String(fs.statSync(fileLocation).mtime);
@@ -172,14 +174,20 @@ const pageCompiler = module.exports = {
 			if(this.cache[fileLocation].extension === 'css'){
 				fileText = fileText.replace(/\/\/.*\n?/g, '');
 
-				delete this.cache[parentName].postcss;
+				for(var x = 0, keys = Object.keys(this.cache.postcss), count = keys.length; x < count; ++x){
+					if(this.cache[keys[x]].cssChildren && this.cache[keys[x]].cssChildren[fileLocation]){
+						log.warn(2)(`[page-compiler] Invalidating ${keys[x]} postcss cache for ${fileLocation}`);
+
+						delete this.cache.postcss[keys[x]];
+					}
+				}
 			}
 
 			else if(this.cache[fileLocation].includes) fileText = fileText.replace(/.*\n/, '');
 
 			if(this.cache[fileLocation].extension === 'js' && /^(.*)\n?(.*)\n?/.exec(fileText)[1].startsWith(this.babelText)){
 				try{
-					log(1)('Running babel on JS: ', fileLocation);
+					log('[page-compiler] Running babel on JS: ', fileLocation);
 
 					fileText = babel.transformSync(fileText, babelOptions).code;
 
@@ -187,7 +195,7 @@ const pageCompiler = module.exports = {
 				}
 
 				catch(err){
-					log.error('Error running babel on JS: ', fileLocation, err);
+					log.error('[page-compiler] Error running babel on JS: ', fileLocation, err);
 
 					fileText = err;
 				}
@@ -195,10 +203,15 @@ const pageCompiler = module.exports = {
 
 			this.cache[fileLocation].text = fileText;
 
-			log()(`Cached ${fileLocation}`);
+			log()(`[page-compiler] Cached ${fileLocation}`);
 		}
 
-		else log(1)(`${fileLocation} has valid cache`);
+		else log(2)(`[page-compiler] ${fileLocation} has valid cache`);
+
+		if(this.cache[fileLocation].extension === 'css' && this.cache[parentName] && (!this.cache[parentName].cssChildren || !this.cache[parentName].cssChildren[fileLocation])){
+			this.cache[parentName].cssChildren = this.cache[parentName].cssChildren || {};
+			this.cache[parentName].cssChildren[fileLocation] = 1;
+		}
 	},
 	getIncludes: function(text, file){
 		var firstLine = /(.*)\n?/.exec(text)[1];
@@ -224,7 +237,7 @@ const pageCompiler = module.exports = {
 			if(includes[x] && fs.existsSync(includes[x])) parsedIncludes.push(includes[x]);
 		}
 
-		log(1)(`Parsed includes for ${file.name}${file.extension}`, parsedIncludes);
+		log(1)(`[page-compiler] Parsed includes for ${file.name}${file.extension}`, parsedIncludes);
 
 		return parsedIncludes;
 	},
@@ -235,7 +248,7 @@ const pageCompiler = module.exports = {
 
 		else filePath = process.env.ROOT_FOLDER;
 
-		log(3)(`Finding file: "${name}.${extension}" from: ${filePath}`);
+		log(3)(`[page-compiler] Finding file: "${name}.${extension}" from: ${filePath}`);
 
 		var fileLocation;
 		var checks = [
@@ -252,13 +265,13 @@ const pageCompiler = module.exports = {
 			fileLocation = path.resolve(filePath, checks[x]);
 
 			if(file && fileLocation === file.location){
-				log(1)(`Skipping include ${fileLocation} ... Same as source`);
+				log(1)(`[page-compiler] Skipping include ${fileLocation} ... Same as source`);
 
 				continue;
 			}
 
 			if(fs.existsSync(fileLocation)){
-				log.info(3)(fileLocation, 'exists');
+				log.info(3)(`[page-compiler] ${fileLocation} exists`);
 
 				if(fileLocation.includes('package.json')){
 					var pkg = JSON.parse(fs.readFileSync(fileLocation));
@@ -270,13 +283,13 @@ const pageCompiler = module.exports = {
 			}
 
 			else{
-				log.warn(3)(fileLocation, 'does not exist');
+				log.warn(3)(`[page-compiler] ${fileLocation} does not exist`);
 
 				fileLocation = null;
 			}
 		}
 
-		if(!fileLocation) log.error(`Could not find file "${name}.${extension}" for "${file && file.location}" - does not exist`);
+		if(!fileLocation) log.error(`[page-compiler] Could not find file "${name}.${extension}" for "${file && file.location}" - does not exist`);
 
 		return fileLocation || `prebuilt/${name}.${extension}`;
 	}
