@@ -33,11 +33,11 @@ const error = module.exports = function(err, req, res, next){
 		}
 	}
 
-	log.error(`${req.originalUrl} | ${titles[err.code]} | "${err.detail || 'No detail'}"`);
+	log.error(`[http-server - error] ${req.originalUrl} | ${titles[err.code]} | "${err.detail || 'No detail'}"`);
 	log.error(1)(err);
 
 	if(err.redirectPath){
-		log()(`Redirecting to: ${err.redirectPath}`);
+		log()(`[http-server - error] Redirecting to: ${err.redirectPath}`);
 
 		return res.redirect(307, err.redirectPath);
 	}

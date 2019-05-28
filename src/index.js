@@ -18,7 +18,7 @@ const httpServer = module.exports = {
 	staticServer,
 	sendPage,
 	init: function(port, rootFolder, homePath = '/home'){
-		log(`Starting http-server from ${rootFolder} @ port "${port}" with the home path "${homePath}"`);
+		log(`[http-server] Starting from ${rootFolder} @ port "${port}" with the home path "${homePath}"`);
 
 		process.env.ROOT_FOLDER = rootFolder;
 

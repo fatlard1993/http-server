@@ -45,7 +45,7 @@ const pageCompiler = module.exports = {
 		var fileLocation = this.findFile(name, 'html');
 		var files = this.cacheFileAndIncludes(fileLocation);
 
-		log(1)(`[page-compiler] Building file "${name}" with: `, files);
+		log(1)(`[http-server - page-compiler] Building file "${name}" with: `, files);
 
 		var file = {
 			html: '',
@@ -57,7 +57,7 @@ const pageCompiler = module.exports = {
 
 		for(var x = 0, count = files.length; x < count; ++x){
 			if(!this.cache[files[x]]){
-				log.warn(`[page-compiler] No file cache: ${files[x]}`);
+				log.warn(`[http-server - page-compiler] No file cache: ${files[x]}`);
 
 				continue;
 			}
@@ -71,7 +71,7 @@ const pageCompiler = module.exports = {
 		this.cacheFile(this.headFileLocation);
 
 		if(file.css.length && !this.cache.postcss[fileLocation]){
-			log(`[page-compiler] Rendering ${name} css`);
+			log(`[http-server - page-compiler] Rendering ${name} css`);
 
 			this.cache.postcss[fileLocation] = postcss([postcssAutoprefixer(autoprefixerOptions), postcssNesting(), postcssExtend(), postcssVariables()]).process(file.css);
 		}
@@ -99,7 +99,7 @@ const pageCompiler = module.exports = {
 			includesLocation = this.cache[fileLocation].includes[x];
 
 			if(!includesLocation){
-				log.warn(1)(`[page-compiler] No location "${includesLocation}"`);
+				log.warn(1)(`[http-server - page-compiler] No location "${includesLocation}"`);
 
 				continue;
 			}
@@ -117,7 +117,7 @@ const pageCompiler = module.exports = {
 					}
 				}
 
-				log.warn(1)(`[page-compiler] Already included ${includesLocation} ${oldIndex}`);
+				log.warn(1)(`[http-server - page-compiler] Already included ${includesLocation} ${oldIndex}`);
 
 				continue;
 			}
@@ -147,7 +147,7 @@ const pageCompiler = module.exports = {
 		}
 
 		if(toCache){
-			log(2)(`[page-compiler] Caching ${fileLocation}`);
+			log(2)(`[http-server - page-compiler] Caching ${fileLocation}`);
 
 			this.cache[fileLocation] = this.cache[fileLocation] || {};
 
@@ -164,7 +164,7 @@ const pageCompiler = module.exports = {
 
 				fileText = this.prebuilt[this.cache[fileLocation].name] || '';
 
-				if(!fileText) log.error(`[page-compiler] Could not include "${fileLocation}", does not exist`);
+				if(!fileText) log.error(`[http-server - page-compiler] Could not include "${fileLocation}", does not exist`);
 			}
 
 			else this.cache[fileLocation].mtime = String(fs.statSync(fileLocation).mtime);
@@ -176,7 +176,7 @@ const pageCompiler = module.exports = {
 
 				for(var x = 0, keys = Object.keys(this.cache.postcss), count = keys.length; x < count; ++x){
 					if(this.cache[keys[x]].cssChildren && this.cache[keys[x]].cssChildren[fileLocation]){
-						log.warn(2)(`[page-compiler] Invalidating ${keys[x]} postcss cache for ${fileLocation}`);
+						log.warn(2)(`[http-server - page-compiler] Invalidating ${keys[x]} postcss cache for ${fileLocation}`);
 
 						delete this.cache.postcss[keys[x]];
 					}
@@ -187,7 +187,7 @@ const pageCompiler = module.exports = {
 
 			if(this.cache[fileLocation].extension === 'js' && /^(.*)\n?(.*)\n?/.exec(fileText)[1].startsWith(this.babelText)){
 				try{
-					log('[page-compiler] Running babel on JS: ', fileLocation);
+					log('[http-server - page-compiler] Running babel on JS: ', fileLocation);
 
 					fileText = babel.transformSync(fileText, babelOptions).code;
 
@@ -195,7 +195,7 @@ const pageCompiler = module.exports = {
 				}
 
 				catch(err){
-					log.error('[page-compiler] Error running babel on JS: ', fileLocation, err);
+					log.error('[http-server - page-compiler] Error running babel on JS: ', fileLocation, err);
 
 					fileText = err;
 				}
@@ -203,10 +203,10 @@ const pageCompiler = module.exports = {
 
 			this.cache[fileLocation].text = fileText;
 
-			log()(`[page-compiler] Cached ${fileLocation}`);
+			log()(`[http-server - page-compiler] Cached ${fileLocation}`);
 		}
 
-		else log(2)(`[page-compiler] ${fileLocation} has valid cache`);
+		else log(2)(`[http-server - page-compiler] ${fileLocation} has valid cache`);
 
 		if(this.cache[fileLocation].extension === 'css' && this.cache[parentName] && (!this.cache[parentName].cssChildren || !this.cache[parentName].cssChildren[fileLocation])){
 			this.cache[parentName].cssChildren = this.cache[parentName].cssChildren || {};
@@ -237,7 +237,7 @@ const pageCompiler = module.exports = {
 			if(includes[x] && fs.existsSync(includes[x])) parsedIncludes.push(includes[x]);
 		}
 
-		log(1)(`[page-compiler] Parsed includes for ${file.name}${file.extension}`, parsedIncludes);
+		log(1)(`[http-server - page-compiler] Parsed includes for ${file.name}${file.extension}`, parsedIncludes);
 
 		return parsedIncludes;
 	},
@@ -248,7 +248,7 @@ const pageCompiler = module.exports = {
 
 		else filePath = process.env.ROOT_FOLDER;
 
-		log(3)(`[page-compiler] Finding file: "${name}.${extension}" from: ${filePath}`);
+		log(3)(`[http-server - page-compiler] Finding file: "${name}.${extension}" from: ${filePath}`);
 
 		var fileLocation;
 		var checks = [
@@ -265,13 +265,13 @@ const pageCompiler = module.exports = {
 			fileLocation = path.resolve(filePath, checks[x]);
 
 			if(file && fileLocation === file.location){
-				log(1)(`[page-compiler] Skipping include ${fileLocation} ... Same as source`);
+				log(1)(`[http-server - page-compiler] Skipping include ${fileLocation} ... Same as source`);
 
 				continue;
 			}
 
 			if(fs.existsSync(fileLocation)){
-				log.info(3)(`[page-compiler] ${fileLocation} exists`);
+				log.info(3)(`[http-server - page-compiler] ${fileLocation} exists`);
 
 				if(fileLocation.includes('package.json')){
 					var pkg = JSON.parse(fs.readFileSync(fileLocation));
@@ -283,13 +283,13 @@ const pageCompiler = module.exports = {
 			}
 
 			else{
-				log.warn(3)(`[page-compiler] ${fileLocation} does not exist`);
+				log.warn(3)(`[http-server - page-compiler] ${fileLocation} does not exist`);
 
 				fileLocation = null;
 			}
 		}
 
-		if(!fileLocation) log.error(`[page-compiler] Could not find file "${name}.${extension}" for "${file && file.location}" - does not exist`);
+		if(!fileLocation) log.error(`[http-server - page-compiler] Could not find file "${name}.${extension}" for "${file && file.location}" - does not exist`);
 
 		return fileLocation || `prebuilt/${name}.${extension}`;
 	}

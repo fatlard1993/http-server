@@ -5,10 +5,10 @@ const log = require('log');
 const responsePrepper = module.exports = function(req, res, next){
 	res.reqType = /^.*\.[^\\]+$/g.test(req.originalUrl) ? 'file' : 'page';
 
-	log()(`\nReq Url - ${req.originalUrl} | ${res.reqType}`);
+	log(`[http-server - responsePrepper] \nReq Url - ${req.originalUrl} | ${res.reqType}`);
 
 	res.sendFile = function(path){
-		log()(`Send file - ${path}`);
+		log(`[http-server - responsePrepper] Send file - ${path}`);
 
 		fs.readFile(path, function(err, file){
 			res.end(file);
@@ -16,7 +16,7 @@ const responsePrepper = module.exports = function(req, res, next){
 	};
 
 	res.json = function(json){
-		log()('Send JSON - ', json);
+		log('[http-server - responsePrepper] Send JSON - ', json);
 
 		res.writeHead(200, { 'Content-Type': 'application/json' });
 
@@ -24,7 +24,7 @@ const responsePrepper = module.exports = function(req, res, next){
 	};
 
 	res.redirect = function(code, path){
-		log()(`${code} redirect - ${path}`);
+		log(`[http-server - responsePrepper] ${code} redirect - ${path}`);
 
 		res.writeHead(code, { 'Location': path });
 
@@ -32,7 +32,7 @@ const responsePrepper = module.exports = function(req, res, next){
 	};
 
 	res.send = function(string){
-		log()(`Send string - "${string}"`);
+		log(`[http-server - responsePrepper] Send string - "${string}"`);
 
 		res.end(string);
 	};
