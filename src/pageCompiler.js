@@ -15,7 +15,6 @@ const util = require('js-util');
 
 const autoprefixerOptions = {
 	flexBox: 'no-2009',
-	browsers: ['last 10 versions'],
 	cascade: false
 };
 
