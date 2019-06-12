@@ -3,7 +3,7 @@ const fs = require('fs');
 const log = require('log');
 
 const responsePrepper = module.exports = function(req, res, next){
-	res.reqType = /^.*\.[^\\]{2,4}$/g.test(req.originalUrl) ? 'file' : 'page';
+	res.reqType = /^.*\.[^\\]{2,6}$/g.test(req.originalUrl) ? 'file' : 'page';
 
 	log(`[http-server] Req Url - ${req.originalUrl} | ${res.reqType}`);
 
