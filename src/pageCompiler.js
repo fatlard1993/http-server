@@ -44,7 +44,7 @@ const pageCompiler = module.exports = {
 		var fileLocation = this.findFile(name, 'html');
 		var files = this.cacheFileAndIncludes(fileLocation);
 
-		log(1)(`[page-compiler] Building file "${name}" with: `, files);
+		log(3)(`[page-compiler] Building file "${name}" with: `, files);
 
 		var file = {
 			html: '',
@@ -116,7 +116,7 @@ const pageCompiler = module.exports = {
 					}
 				}
 
-				log.warn(1)(`[page-compiler] Already included ${includesLocation} ${oldIndex}`);
+				log.warn(3)(`[page-compiler] Already included ${includesLocation} ${oldIndex}`);
 
 				continue;
 			}
@@ -146,7 +146,7 @@ const pageCompiler = module.exports = {
 		}
 
 		if(toCache){
-			log(2)(`[page-compiler] Caching ${fileLocation}`);
+			log(3)(`[page-compiler] Caching ${fileLocation}`);
 
 			this.cache[fileLocation] = this.cache[fileLocation] || {};
 
@@ -163,7 +163,7 @@ const pageCompiler = module.exports = {
 
 				fileText = this.prebuilt[this.cache[fileLocation].name] || '';
 
-				if(!fileText) log.error(`[page-compiler] Could not include "${fileLocation}", does not exist`);
+				if(!fileText) log.warn(`[page-compiler] Could not include "${fileLocation}", does not exist`);
 			}
 
 			else this.cache[fileLocation].mtime = String(fs.statSync(fileLocation).mtime);
@@ -202,10 +202,10 @@ const pageCompiler = module.exports = {
 
 			this.cache[fileLocation].text = fileText;
 
-			log()(`[page-compiler] Cached ${fileLocation}`);
+			log(2)(`[page-compiler] Cached ${fileLocation}`);
 		}
 
-		else log(2)(`[page-compiler] ${fileLocation} has valid cache`);
+		else log(3)(`[page-compiler] ${fileLocation} has valid cache`);
 
 		if(this.cache[fileLocation].extension === 'css' && this.cache[parentName] && (!this.cache[parentName].cssChildren || !this.cache[parentName].cssChildren[fileLocation])){
 			this.cache[parentName].cssChildren = this.cache[parentName].cssChildren || {};
