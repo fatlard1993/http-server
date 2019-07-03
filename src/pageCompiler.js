@@ -170,7 +170,7 @@ const pageCompiler = module.exports = {
 
 			this.cache[fileLocation].includes = this.getIncludes(fileText, this.cache[fileLocation]);
 
-			if(this.cache[fileLocation].extension === 'css'){
+			if(fileText && this.cache[fileLocation].extension === 'css'){
 				fileText = fileText.replace(/\/\/.*\n?/g, '');
 
 				for(var x = 0, keys = Object.keys(this.cache.postcss), count = keys.length; x < count; ++x){
@@ -236,7 +236,7 @@ const pageCompiler = module.exports = {
 			if(includes[x] && fs.existsSync(includes[x])) parsedIncludes.push(includes[x]);
 		}
 
-		log(1)(`[page-compiler] Parsed includes for ${file.name}${file.extension}`, parsedIncludes);
+		log(1)(`[page-compiler] Parsed includes for ${file.name}.${file.extension}`, parsedIncludes);
 
 		return parsedIncludes;
 	},
