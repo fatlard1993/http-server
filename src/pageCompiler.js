@@ -243,9 +243,16 @@ const pageCompiler = module.exports = {
 	findFile: function(name, extension, file){
 		var filePath;
 
-		if(file && file.path) filePath = findRoot(file.path);
+		if(file && file.path){
+			try{
+				filePath = findRoot(file.path);
+			}
+			catch(err){
+				log.warn(err);
+			}
+		}
 
-		else filePath = process.env.ROOT_FOLDER;
+		if(!filePath) filePath = process.env.ROOT_FOLDER;
 
 		log(3)(`[page-compiler] Finding file: "${name}.${extension}" from: ${filePath}`);
 
