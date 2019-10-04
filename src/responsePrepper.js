@@ -1,11 +1,28 @@
 const fs = require('fs');
+const zlib = require('zlib');
 
+const pageCompiler = require('page-compiler');
+const now = require('performance-now');
 const log = require('log');
 
-const responsePrepper = module.exports = function(req, res, next){
+module.exports = function responsePrepper(req, res, next){
 	res.reqType = /^.*\.[^\\]{2,6}$/g.test(req.originalUrl) ? 'file' : 'page';
 
 	log(`[http-server] Req Url - ${req.originalUrl} | ${res.reqType}`);
+
+	res.sendPage = function(name, status = 200){
+		log(`[http-server] Send page - ${name} - ${status}`);
+
+		res.writeHead(status, {'Content-Type': 'text/html', 'Content-Encoding': 'gzip'});
+
+		var start = now();
+
+		zlib.gzip(Buffer.from(pageCompiler.build(name), 'utf8'), (_, result) => {
+			log(`[http-server] Time to prepare "${name}": ${((now() - start) / 1000).toFixed(2)}s`);
+
+			res.end(result);
+		});
+	};
 
 	res.sendFile = function(path){
 		log(`[http-server] Send file - ${path}`);

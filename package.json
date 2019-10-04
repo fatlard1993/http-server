@@ -16,11 +16,6 @@
 		"url": "https://github.com/fatlard1993/http-server/issues"
 	},
 	"homepage": "https://github.com/fatlard1993/http-server#readme",
-	"browserslist": [
-		"last 5 versions",
-		"> 1%",
-		"not dead"
-	],
 	"eslintConfig": {
 		"extends": "rules"
 	},
@@ -30,20 +25,14 @@
 		"eslint": "^5.16.0"
 	},
 	"dependencies": {
-		"@babel/core": "^7.4.5",
-		"@babel/preset-env": "^7.4.5",
-		"autoprefixer": "^9.6.0",
-		"babel-preset-minify": "^0.5.0",
 		"body-parser": "^1.19.0",
 		"cookie-parser": "^1.4.4",
 		"find-root": "^1.1.0",
 		"fs-extended": "github:fatlard1993/fs-extended#2.x.x",
 		"log": "github:fatlard1993/log#2.x.x",
+		"page-compiler": "github:fatlard1993/page-compiler#2.x.x",
 		"performance-now": "^2.1.0",
 		"polka": "^0.5.2",
-		"postcss-extend-rule": "^2.0.0",
-		"postcss-nested": "^4.1.2",
-		"postcss-simple-vars": "^5.0.2",
 		"serve-static": "^1.14.1",
 		"yargs": "^13.2.4"
 	}

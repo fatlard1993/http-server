@@ -1,6 +1,6 @@
 const log = require('log');
 
-const pageCompiler = require('../pageCompiler');
+const pageCompiler = require('page-compiler');
 
 const error = module.exports = function(err, req, res, next){
 	if(!err || !err.code){
@@ -47,7 +47,7 @@ const error = module.exports = function(err, req, res, next){
 
 	res.status(err.code);
 
-	if(res.reqType === 'page') res.end(pageCompiler.buildFile('error', detail));
+	if(res.reqType === 'page') res.end(pageCompiler.build('error', detail));
 
 	else res.end();
 };

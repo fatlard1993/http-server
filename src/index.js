@@ -5,10 +5,10 @@ const cookieParser = require('cookie-parser');
 const log = require('log');
 
 const sendPage = require('./sendPage');
-const pageCompiler = require('./pageCompiler');
-const onError = require('./middleware/error');
-const responsePrepper = require('./middleware/responsePrepper');
-const redirectTrailingWak = require('./middleware/redirectTrailingWak');
+const pageCompiler = require('page-compiler');
+const onError = require('./error');
+const responsePrepper = require('./responsePrepper');
+const redirectTrailingWak = require('./redirectTrailingWak');
 
 const app = polka({ onError });
 
