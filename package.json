@@ -21,8 +21,8 @@
 	},
 	"devDependencies": {
 		"eslint-config-rules": "github:fatlard1993/eslint-config-rules#2.x.x",
-		"babel-eslint": "^10.0.1",
-		"eslint": "^5.16.0"
+		"babel-eslint": "^10.0.3",
+		"eslint": "^6.5.1"
 	},
 	"dependencies": {
 		"body-parser": "^1.19.0",
@@ -34,6 +34,6 @@
 		"performance-now": "^2.1.0",
 		"polka": "^0.5.2",
 		"serve-static": "^1.14.1",
-		"yargs": "^13.2.4"
+		"yargs": "^14.2.0"
 	}
 }
