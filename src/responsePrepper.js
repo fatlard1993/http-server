@@ -1,9 +1,9 @@
 const fs = require('fs');
 const zlib = require('zlib');
 
+const log = new (require('log'))({ tag: 'http-server' });
 const pageCompiler = require('page-compiler');
 const now = require('performance-now');
-const log = require('log');
 
 module.exports = function responsePrepper(req, res, next){
 	res.reqType = /^.*\.[^\\]{2,6}$/g.test(req.originalUrl) ? 'file' : 'page';

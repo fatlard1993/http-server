@@ -2,7 +2,7 @@ const polka = require('polka');
 const staticServer = require('serve-static');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-const log = require('log');
+const log = new (require('log'))({ tag: 'http-server' });
 
 const onError = require('./error');
 const responsePrepper = require('./responsePrepper');

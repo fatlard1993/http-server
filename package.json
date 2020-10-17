@@ -29,7 +29,7 @@
 		"cookie-parser": "^1.4.5",
 		"find-root": "^1.1.0",
 		"fs-extended": "github:fatlard1993/fs-extended#2.x.x",
-		"log": "github:fatlard1993/log#2.x.x",
+		"log": "github:fatlard1993/log#3.x.x",
 		"page-compiler": "github:fatlard1993/page-compiler#1.x.x",
 		"performance-now": "^2.1.0",
 		"polka": "^0.5.2",

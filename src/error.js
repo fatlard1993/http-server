@@ -1,4 +1,4 @@
-const log = require('log');
+const log = new (require('log'))({ tag: 'http-server' });
 
 const pageCompiler = require('page-compiler');
 
