@@ -1,12 +1,11 @@
 module.exports = function redirectTrailingWak(homePath){
 	return function(req, res, next){
-		var splitReqUrl = req.originalUrl.split('?');
-		var reqSlug = splitReqUrl[0];
+		const splitReqUrl = req.originalUrl.split('?');
+		const reqSlug = splitReqUrl[0], query = splitReqUrl[1];
 
-		if(reqSlug.slice(-1) !== '/') return next();
+		if(reqSlug === '/' || reqSlug.slice(-1) !== '/') return next();
+
 		reqSlug = reqSlug.slice(0, -1);
-
-		var query = splitReqUrl[1];
 
 		res.redirect(301, reqSlug ? (reqSlug + (query ? ('?'+ query) : '')) : homePath);
 	};
