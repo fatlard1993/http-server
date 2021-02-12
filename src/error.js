@@ -2,7 +2,7 @@ const log = new (require('log'))({ tag: 'http-server' });
 
 const pageCompiler = require('page-compiler');
 
-const error = module.exports = function(err, req, res, next){
+function error(err, req, res, next){
 	if(!err || !err.code){
 		if(err instanceof Object) err.code = 500;
 
@@ -46,4 +46,6 @@ const error = module.exports = function(err, req, res, next){
 	if(res.reqType === 'page') res.end(pageCompiler.build('error', detail));
 
 	else res.end();
-};
+}
+
+module.exports = error;

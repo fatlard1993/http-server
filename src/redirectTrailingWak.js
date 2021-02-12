@@ -1,7 +1,7 @@
 module.exports = function redirectTrailingWak(homePath){
 	return function(req, res, next){
-		const splitReqUrl = req.originalUrl.split('?');
-		const reqSlug = splitReqUrl[0], query = splitReqUrl[1];
+		const splitReqUrl = req.originalUrl.split('?'), query = splitReqUrl[1];
+		let reqSlug = splitReqUrl[0];
 
 		if(reqSlug === '/' || reqSlug.slice(-1) !== '/') return next();
 
